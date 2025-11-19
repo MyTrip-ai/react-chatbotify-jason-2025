@@ -2,9 +2,10 @@ import { Settings } from "../../types/Settings";
 import { Button } from "../Button";
 
 import actionDisabledIcon from "../../assets/action_disabled_icon.svg";
-import botAvatar from "../../assets/bot_avatar.svg";
+import botAvatar from "../../assets/resort_wordmark.svg";
 import userAvatar from "../../assets/user_avatar.svg";
 import ChatIcon from "../../assets/chat_icon.svg?react";
+import myTripLogo from "../../assets/mytrip_logo.png";
 import FileAttachmentIcon from '../../assets/file_attachment_icon.svg?react';
 import NotificationIcon from '../../assets/notification_icon.svg?react';
 import NotificationIconDisabled from '../../assets/notification_icon_disabled.svg?react';
@@ -40,16 +41,10 @@ export const DefaultSettings: Settings = {
 		icon: ChatIcon,
 	},
 	header: {
-		title: (
-			<div style={{cursor: "pointer", margin: 0, fontSize: 20, fontWeight: "bold"}} onClick={
-				() => window.open("https://github.com/tjtanjin/", "_blank", "noopener,noreferrer")
-			}>
-				Tan Jin
-			</div>
-		),
+		title: "AI Travel Assistant",
 		showAvatar: true,
 		avatar: botAvatar,
-		buttons: [Button.NOTIFICATION_BUTTON, Button.AUDIO_BUTTON, Button.CLOSE_CHAT_BUTTON],
+		buttons: [Button.CLOSE_CHAT_BUTTON],
 		closeChatIcon: CloseChatIcon,
 	},
 	notification: {
@@ -136,28 +131,21 @@ export const DefaultSettings: Settings = {
 	},
 	footer: {
 		text: (
-			<div style={{cursor: "pointer", display: "flex", flexDirection: "row", alignItems: "center", columnGap: 3}} 
-				onClick={() => window.open("https://react-chatbotify.com", "_blank", "noopener,noreferrer")}
+			<div
+				style={{cursor: "pointer", display: "flex", flexDirection: "row", alignItems: "center", columnGap: 6}}
+				onClick={() => window.open("https://mytrip.ai", "_blank", "noopener,noreferrer")}
 			>
-				<span key={0}>Powered By </span>
-				<div
+				<span key={0}>Powered By</span>
+				<img
 					key={1}
-					style={{
-						borderRadius: "50%",
-						width: 14,
-						height: 14,
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						background: "linear-gradient(to right, #42b0c5, #491d8d)",
-					}}
-				>
-					<ChatIcon style={{ width: "80%", height: "80%", fill: "#fff" }} />
-				</div>
-				<span key={2} style={{fontWeight: "bold"}}> React ChatBotify</span>
+					src={myTripLogo}
+					alt="MyTrip.AI logo"
+					style={{ width: 20, height: 20, objectFit: "contain" }}
+				/>
+				<span key={2} style={{fontWeight: "bold"}}>MyTrip.AI</span>
 			</div>
 		),
-		buttons: [Button.FILE_ATTACHMENT_BUTTON, Button.EMOJI_PICKER_BUTTON]
+		buttons: []
 	},
 	fileAttachment: {
 		disabled: false,

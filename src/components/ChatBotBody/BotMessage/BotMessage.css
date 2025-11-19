@@ -3,18 +3,21 @@
 .rcb-bot-message-container {
 	display: flex;
 	flex-direction: row;
+	align-items: flex-start;
 }
 
 .rcb-bot-message {
-	margin-top: 8px;
-	padding: 12px 16px;
-	border-radius: 22px;
+	margin-top: 12px;
+	padding: 14px 20px;
+	border-radius: 24px;
 	min-height: 20px;
 	height: fit-content;
 	width: fit-content;
 	font-size: 15px;
- 	overflow-wrap: anywhere;
-	overflow: auto;
+	line-height: 1.5;
+	letter-spacing: 0.01em;
+	overflow-wrap: anywhere;
+	overflow: hidden;
 	white-space: pre-wrap;
 	text-align: left;
 	margin-left: 16px;

@@ -1,24 +1,26 @@
 /* ChatBot Input */
 
 .rcb-chat-input {
-	padding: 8px 16px;
-	border-top: 1px solid #ccc;
+	padding: 16px 24px;
+	border-top: 1px solid rgba(165, 217, 210, 0.4);
 	display: flex;
 	align-items: center;
-	background-color: #fff;
+	gap: 12px;
+	background: rgba(255, 255, 255, 0.75);
+	backdrop-filter: blur(8px);
 }
 
-.rcb-chat-input::placeholder {
-	color: #999;
+.rcb-chat-input-textarea::placeholder {
+	color: var(--color-text-secondary);
 }
 
 /* ChatBot Input Text Area */
 
 .rcb-chat-input-textarea {
 	flex: 1;
-	padding: 8px;
-	border: none;
-	border-radius: 4px;
+	padding: 10px 16px;
+	border: 1px solid rgba(165, 217, 210, 0.6);
+	border-radius: 999px;
 	outline: none;
 	font-size: 16px;
 	resize: none; 
@@ -26,8 +28,8 @@
 	min-height: 38px;
 	overflow-y: scroll;
 	font-family: inherit;
-	background-color: #fff;
-	color: #000;
+	background-color: transparent;
+	color: var(--color-text-primary);
 	touch-action: none;
 }
 
@@ -46,7 +48,7 @@
 /* ChatBot Input Button Area */
 
 .rcb-chat-input-char-counter {
-	font-size: 14px;
-	margin-left: 8px;
-	margin-top: 3px;
+	font-size: 0.8rem;
+	letter-spacing: 0.05em;
+	color: var(--color-text-secondary);
 }

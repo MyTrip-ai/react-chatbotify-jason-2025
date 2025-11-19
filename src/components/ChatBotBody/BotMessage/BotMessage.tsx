@@ -38,9 +38,21 @@ const BotMessage = ({
 	);
 
 	// styles for bot bubble
+	const legacyPurplePalette = [
+		"#491d8d",
+		"#481d8e",
+		"#481d8d",
+	]; // retained to override secondary color usage if needed
+	const secondaryColor = settings.general?.secondaryColor;
+	const bubbleBorderColor = secondaryColor
+		&& !legacyPurplePalette.includes(secondaryColor?.toLowerCase())
+		? secondaryColor
+		: "#79c1b3";
+
 	const botBubbleStyle: CSSProperties = {
-		backgroundColor: settings.general?.secondaryColor,
-		color: "#fff",
+		backgroundColor: "rgba(255, 255, 255, 0.75)",
+		color: "var(--color-text-primary)",
+		border: `1px solid ${bubbleBorderColor}`,
 		maxWidth: settings.botBubble?.showAvatar ? "65%" : "70%",
 		...styles.botBubbleStyle,
 	};

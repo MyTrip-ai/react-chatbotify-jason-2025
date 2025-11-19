@@ -1,12 +1,12 @@
 /* Options Container */
 
 .rcb-options-container {
-	padding-top: 12px;
+	padding-top: 16px;
 	margin-left: 16px;
 	max-width: 70%;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 8px;
 }
 
 .rcb-options-offset {
@@ -19,17 +19,20 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 10px 20px;
-	border-radius: 20px;
-	font-size: 14px;
-	border-width: 0.5px;
-	border-style: solid;
+	padding: 8px 18px;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	letter-spacing: 0.04em;
+	border: 1px solid var(--color-accent-light-teal);
+	background: rgba(255, 255, 255, 0.8);
+	color: var(--color-text-primary);
 	cursor: pointer;
-	transition: background-color 0.3s ease;
+	transition: background-color 0.3s ease, color 0.3s ease;
 	animation: rcb-animation-options-entry 0.5s ease-out;
 	overflow: hidden;
 }
 
 .rcb-options:hover {
-	box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); 
+	background: rgba(165, 217, 210, 0.2);
+	color: var(--color-text-secondary);
 }

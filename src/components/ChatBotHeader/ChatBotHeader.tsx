@@ -19,10 +19,20 @@ const ChatBotHeader = ({ buttons }: { buttons: JSX.Element[] }) => {
 
 	// styles for header
 	const headerStyle: React.CSSProperties = {
-		backgroundImage: `linear-gradient(to right, ${settings.general?.secondaryColor},
-			${settings.general?.primaryColor})`,
+		backgroundColor: "transparent",
+		borderBottom: "1px solid rgba(165, 217, 210, 0.4)",
+		padding: "8px 0",
 		...styles.headerStyle
-	}
+	};
+
+	const titleStyle: React.CSSProperties = {
+		margin: 0,
+		fontSize: "1.6rem",
+		fontWeight: 300,
+		fontFamily: "Playfair Display, 'Cormorant Garamond', serif",
+		color: "var(--color-accent-teal)",
+		textAlign: "center"
+	};
 
 	return (
 		<div style={headerStyle} className="rcb-chat-header-container">
@@ -35,7 +45,7 @@ const ChatBotHeader = ({ buttons }: { buttons: JSX.Element[] }) => {
 				}
 				{isValidElement(settings.header?.title) ?
 					settings.header?.title :
-					<div style={{margin: 0, fontSize: 20, fontWeight: "bold"}}>
+					<div style={titleStyle}>
 						{settings.header?.title}
 					</div>
 				}

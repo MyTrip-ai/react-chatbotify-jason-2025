@@ -1,25 +1,33 @@
 /* ChatBot Header */
 
+
 .rcb-chat-header-container {
-	padding: 12px;
-	color: #fff;
-	border-bottom: 1px solid #ccc;
+	padding: 8px 0;
+	color: var(--color-text-secondary);
+	border-bottom: 1px solid rgba(165, 217, 210, 0.4);
 	display: flex;
 	justify-content: space-between;
-	max-height: 55px;
+	gap: 12px;
 }
 
 .rcb-chat-header {
 	display: flex;
 	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-size: 0.85rem;
 }
 
 /* ChatBot Avatar */
 
 .rcb-bot-avatar {
-	background-size: cover;
-	width: 30px;
-	height: 30px;
-	border-radius: 50%;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
 	margin-right: 12px;
 }
