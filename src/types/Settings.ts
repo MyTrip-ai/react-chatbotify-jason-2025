@@ -1,3 +1,5 @@
+import { BrandTokens } from "./BrandTokens";
+
 /**
  * Defines the settings for the chat bot.
  */
@@ -14,6 +16,7 @@ export type Settings = {
 		embedded?: boolean;
 		flowStartTrigger?: string;
 	},
+	branding?: BrandTokens,
 	tooltip?: {
 		mode?: string;
 		text?: string;

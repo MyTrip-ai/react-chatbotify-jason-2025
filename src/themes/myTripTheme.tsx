@@ -4,6 +4,7 @@ import { Button } from "../constants/Button";
 import { Theme } from "../types/Theme";
 import { Settings } from "../types/Settings";
 import { Styles } from "../types/Styles";
+import { BrandTokens, defaultBrandTokens } from "../types/BrandTokens";
 import resortWordmark from "../assets/resort_wordmark.svg";
 import myTripLogo from "../assets/mytrip_logo.png";
 
@@ -12,47 +13,48 @@ export const myTripTheme: Theme = {
 	version: "1.0.0",
 };
 
-const glassChatWindow: CSSProperties = {
+const glassChatWindow = (branding: BrandTokens): CSSProperties => ({
 	borderRadius: "24px",
-	background: "rgba(255, 255, 255, 0.75)",
-	border: "1px solid rgba(165, 217, 210, 0.35)",
+	background: `rgba(255, 255, 255, ${branding.surfaceAlpha})`,
+	border: `1px solid ${branding.primary}40`,
 	boxShadow: "0 30px 80px rgba(93, 128, 120, 0.12)",
-	backdropFilter: "blur(20px)",
+	backdropFilter: `blur(${branding.blurPx}px)`,
 	padding: "16px 24px",
-};
+});
 
-const tropicalHeader: CSSProperties = {
-	borderBottom: "1px solid rgba(165, 217, 210, 0.4)",
+const tropicalHeader = (branding: BrandTokens): CSSProperties => ({
+	borderBottom: `1px solid ${branding.primary}66`,
 	padding: "8px 0",
-};
+});
 
-const tropicalBody: CSSProperties = {
+const tropicalBody = (): CSSProperties => ({
 	padding: "24px 32px 32px",
-};
+});
 
-const translucentInput: CSSProperties = {
+const translucentInput = (branding: BrandTokens): CSSProperties => ({
 	padding: "16px 24px",
-	borderTop: "1px solid rgba(165, 217, 210, 0.4)",
-	background: "rgba(255, 255, 255, 0.75)",
-	backdropFilter: "blur(8px)",
-};
+	borderTop: `1px solid ${branding.primary}66`,
+	background: `rgba(255, 255, 255, ${branding.surfaceAlpha})`,
+	backdropFilter: `blur(${Math.floor(branding.blurPx * 0.4)}px)`,
+});
 
-const translucentInputArea: CSSProperties = {
+const translucentInputArea = (branding: BrandTokens): CSSProperties => ({
 	padding: "10px 16px",
-	border: "1px solid rgba(165, 217, 210, 0.6)",
+	border: `1px solid ${branding.primary}99`,
 	borderRadius: 999,
 	background: "transparent",
-};
+});
 
-const floatingBaseSettings: Partial<Settings> = {
+const floatingBaseSettings = (branding: BrandTokens): Partial<Settings> => ({
 	general: {
-		primaryColor: "#79C1B3",
-		secondaryColor: "#79C1B3",
-		fontFamily: "'Lato', 'Avenir', 'Helvetica Neue', sans-serif",
+		primaryColor: branding.primary,
+		secondaryColor: branding.secondary,
+		fontFamily: branding.fontFamily,
 		showHeader: true,
 		showFooter: true,
 		showInputRow: true,
 	},
+	branding: branding,
 	header: {
 		title: "AI Travel Assistant",
 		showAvatar: true,
@@ -90,57 +92,64 @@ const floatingBaseSettings: Partial<Settings> = {
 	userBubble: {
 		showAvatar: false,
 	},
-};
+});
 
-const floatingBaseStyles: Styles = {
+const floatingBaseStyles = (branding: BrandTokens): Styles => ({
 	chatWindowStyle: {
-		...glassChatWindow,
+		...glassChatWindow(branding),
 		position: "fixed",
 		right: 20,
 		bottom: 20,
 		width: 420,
 		height: 580,
 	},
-	headerStyle: tropicalHeader,
-	bodyStyle: tropicalBody,
-	chatInputContainerStyle: translucentInput,
-	chatInputAreaStyle: translucentInputArea,
+	headerStyle: tropicalHeader(branding),
+	bodyStyle: tropicalBody(),
+	chatInputContainerStyle: translucentInput(branding),
+	chatInputAreaStyle: translucentInputArea(branding),
 	botBubbleStyle: {
-		backgroundColor: "rgba(255, 255, 255, 0.75)",
-		border: "1px solid #79c1b3",
+		backgroundColor: `rgba(255, 255, 255, ${branding.surfaceAlpha})`,
+		border: `1px solid ${branding.primary}`,
 	},
 	userBubbleStyle: {
-		backgroundColor: "rgba(255, 255, 255, 0.75)",
-		border: "1px solid #998167",
+		backgroundColor: `rgba(255, 255, 255, ${branding.surfaceAlpha})`,
+		border: `1px solid ${branding.userAccent}`,
 	},
 	botOptionStyle: {
-		border: "1px solid rgba(165, 217, 210, 0.6)",
+		border: `1px solid ${branding.primary}99`,
 		borderRadius: 999,
 	},
+});
+
+export const myTripFloatingSettings = (branding: BrandTokens = defaultBrandTokens): Partial<Settings> => {
+	const baseSettings = floatingBaseSettings(branding);
+	return {
+		...baseSettings,
+		general: {
+			...baseSettings.general,
+			embedded: false,
+		},
+	};
 };
 
-export const myTripFloatingSettings: Partial<Settings> = {
-	...floatingBaseSettings,
-	general: {
-		...floatingBaseSettings.general,
-		embedded: false,
-	},
+export const myTripFloatingStyles = (branding: BrandTokens = defaultBrandTokens): Styles => 
+	floatingBaseStyles(branding);
+
+export const myTripEmbeddedSettings = (branding: BrandTokens = defaultBrandTokens): Partial<Settings> => {
+	const baseSettings = floatingBaseSettings(branding);
+	return {
+		...baseSettings,
+		general: {
+			...baseSettings.general,
+			embedded: true,
+		},
+	};
 };
 
-export const myTripFloatingStyles: Styles = floatingBaseStyles;
-
-export const myTripEmbeddedSettings: Partial<Settings> = {
-	...floatingBaseSettings,
-	general: {
-		...floatingBaseSettings.general,
-		embedded: true,
-	},
-};
-
-export const myTripEmbeddedStyles: Styles = {
-	...floatingBaseStyles,
+export const myTripEmbeddedStyles = (branding: BrandTokens = defaultBrandTokens): Styles => ({
+	...floatingBaseStyles(branding),
 	chatWindowStyle: {
-		...glassChatWindow,
+		...glassChatWindow(branding),
 		position: "relative",
 		width: "100%",
 		height: "auto",
@@ -150,4 +159,4 @@ export const myTripEmbeddedStyles: Styles = {
 	chatButtonStyle: {
 		display: "none",
 	},
-};
+});

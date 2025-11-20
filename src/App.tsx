@@ -2,6 +2,8 @@ import { useState } from "react";
 import ChatBot from "./components/ChatBot";
 import { Flow } from "./types/Flow";
 import { Params } from "./types/Params";
+import { defaultBrandTokens } from "./types/BrandTokens";
+import { myTripFloatingSettings, myTripFloatingStyles } from "./themes/myTripTheme";
 
 function App() {
 	const [name, setName] = useState("")
@@ -145,6 +147,7 @@ function App() {
 						id="chatbot-id"
 						flow={flow}
 						settings={{
+							...myTripFloatingSettings(defaultBrandTokens),
 							audio: {disabled: false},
 							chatInput: {botDelay: 1000},
 							userBubble: {showAvatar: true},
@@ -152,6 +155,7 @@ function App() {
 							voice: {disabled: false},
 							sensitiveInput: {asterisksCount: 6},
 						}}
+						styles={myTripFloatingStyles(defaultBrandTokens)}
 					></ChatBot>
 				</div>
 			</header>
