@@ -1,5 +1,13 @@
 // chatbot import
 import ChatBot from "./components/ChatBot";
+import EmbeddedMyTripChat from "./components/EmbeddedMyTripChat";
+import {
+	myTripTheme,
+	myTripFloatingSettings,
+	myTripFloatingStyles,
+	myTripEmbeddedSettings,
+	myTripEmbeddedStyles,
+} from "./themes/myTripTheme";
 
 // provider import
 import ChatBotProvider from "./context/ChatBotContext";
@@ -119,6 +127,15 @@ export {
 	RcbEvent,
 };
 
+// theme exports
+export {
+	myTripTheme,
+	myTripFloatingSettings,
+	myTripFloatingStyles,
+	myTripEmbeddedSettings,
+	myTripEmbeddedStyles,
+};
+
 // hook exports
 export {
 	useAudio,
@@ -145,3 +162,8 @@ export {
 
 // chatbot export
 export default ChatBot
+
+// embedded component export
+export {
+	EmbeddedMyTripChat
+}

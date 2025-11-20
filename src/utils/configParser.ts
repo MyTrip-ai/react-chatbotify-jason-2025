@@ -4,6 +4,7 @@ import { processAndFetchThemeConfig } from "../services/ThemeService";
 import { Settings } from "../types/Settings";
 import { Styles } from "../types/Styles";
 import { Theme } from "../types/Theme";
+import { Button } from "../constants/Button";
 import { DefaultSettings } from "../constants/internal/DefaultSettings";
 import { DefaultStyles } from "../constants/internal/DefaultStyles";
 
@@ -66,6 +67,14 @@ export const parseConfig = async (botId: string, providedSettings: Settings | un
 	// enforces value for bot delay does not go below 500
 	if (combinedSettings.chatInput?.botDelay != null && combinedSettings.chatInput?.botDelay < 500) {
 		combinedSettings.chatInput.botDelay = 500;
+	}
+
+	// ensure voice button is removed whenever voice is disabled
+	if (combinedSettings.voice?.disabled !== false) {
+		const chatButtons = combinedSettings.chatInput?.buttons;
+		if (chatButtons && combinedSettings.chatInput) {
+			combinedSettings.chatInput.buttons = chatButtons.filter((button) => button !== Button.VOICE_MESSAGE_BUTTON);
+		}
 	}
 
 	return {settings: combinedSettings, inlineStyles: combinedStyles, cssStylesText};
