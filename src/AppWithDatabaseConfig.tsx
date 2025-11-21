@@ -14,7 +14,10 @@ import { Params } from "./types/Params";          // Parameters passed between f
 import { BrandTokens, defaultBrandTokens } from "./types/BrandTokens"; // Branding configuration
 
 // Utility functions
-import { mapApiToConfig } from "./utils/apiMapper"; // Maps API response to chatbot config
+import { mapApiToConfig, applyURLParamOverrides } from "./utils/apiMapper"; // Maps API response to chatbot config
+
+// Custom hooks
+import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles } from "./themes/myTripTheme";
@@ -131,8 +134,12 @@ function AppWithDatabaseConfig() {
 	// Loading flag - prevents rendering until config is fetched
 	const [configLoaded, setConfigLoaded] = useState(false);
 
+	// Extract URL parameters for configuration overrides
+	const urlParams = useURLParams();
+
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
+	console.log("🔗 URL Parameters:", urlParams);
 
 	// ========================================================================
 	// CONFIGURATION LOADING
@@ -150,14 +157,28 @@ function AppWithDatabaseConfig() {
 			// TOKEN CONFIGURATION - Choose one option below
 			// ================================================================
 			
-			// OPTION 1: Hardcoded token (CURRENT - for testing only)
-			// ⚠️ WARNING: Never commit real tokens to version control!
-			// This is a JWT token that authenticates with the backend API
-			const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjUxMzg2MmVjNDU0NjAwMWNiYWQ0" + 
-			"YiIsImNvbGxlY3Rpb24iOiJ1c2VycyIsImVtYWlsIjoiamRAdGVzdC5jb20iLCJzaWQiOiJhNDM0Y2IyMS1iOGM0LTQ5Yj" + 
-			"EtYTYyZS00M2E4MmY5MmQ5MGMiLCJ0ZW5hbnRzIjpbeyJ0ZW5hbnQiOiI2ODdlYTc0MTlmYTg4OGU1YzZkZDUzYzYiLCJyb2x" +
-			"lcyI6WyJ0ZW5hbnQtdmlld2VyIiwidGVuYW50LWFkbWluIl0sImlkIjoiNjhmNTEzODA5NWVmODY3NDUyMzU5OWEyIn1dLCJpY" +
-			"XQiOjE3NjM3Mzc5NjIsImV4cCI6MTc2MzgyNDM2Mn0.eDdcASFKcdJnHsWUnHrgTaHjqs8ByO59gICY1hwW24o";
+			// ================================================================
+			// TOKEN PRIORITY - Choose token source in this order:
+			// 1. URL parameter (?token=xxx) - HIGHEST PRIORITY
+			// 2. Hardcoded token (for testing)
+			// ================================================================
+			
+			// Try to get token from URL first
+			let token = urlParams.token;
+			
+			// If no URL token, fall back to hardcoded token
+			if (!token) {
+				// OPTION 1: Hardcoded token (CURRENT - for testing only)
+				// ⚠️ WARNING: Never commit real tokens to version control!
+				// This is a JWT token that authenticates with the backend API
+				token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjUxMzg2MmVjNDU0NjAwMWNiYWQ0" + 
+				"YiIsImNvbGxlY3Rpb24iOiJ1c2VycyIsImVtYWlsIjoiamRAdGVzdC5jb20iLCJzaWQiOiJhNDM0Y2IyMS1iOGM0LTQ5Yj" + 
+				"EtYTYyZS00M2E4MmY5MmQ5MGMiLCJ0ZW5hbnRzIjpbeyJ0ZW5hbnQiOiI2ODdlYTc0MTlmYTg4OGU1YzZkZDUzYzYiLCJyb2x" +
+				"lcyI6WyJ0ZW5hbnQtdmlld2VyIiwidGVuYW50LWFkbWluIl0sImlkIjoiNjhmNTEzODA5NWVmODY3NDUyMzU5OWEyIn1dLCJpY" +
+				"XQiOjE3NjM3Mzc5NjIsImV4cCI6MTc2MzgyNDM2Mn0.eDdcASFKcdJnHsWUnHrgTaHjqs8ByO59gICY1hwW24o";
+			}
+			
+			console.log("🔑 Token source:", urlParams.token ? "URL parameter" : "Hardcoded");
 			
 			// OPTION 2: Get from localStorage
 			// Use this if you store the token after user login
@@ -172,15 +193,22 @@ function AppWithDatabaseConfig() {
 			
 			// Fetch configuration from backend API
 			console.log("📡 Calling fetchWidgetConfigByToken...");
-			const config = await fetchWidgetConfigByToken(token);
-			console.log("📦 Config received:", config);
+			let config = await fetchWidgetConfigByToken(token);
+			console.log("📦 Config received from database:", config);
+			
+			// Apply URL parameter overrides on top of database config
+			if (config) {
+				console.log("🔗 Applying URL parameter overrides...");
+				config = applyURLParamOverrides(config, urlParams);
+				console.log("✨ Config after URL overrides:", config);
+			}
 			
 			// Update state with fetched configuration
 			if (config && config.branding) {
-				console.log("✅ Branding loaded from database:", config.branding);
+				console.log("✅ Branding loaded:", config.branding);
 				console.log("🖼️ Full config:", config);
 				
-				// Apply custom branding from database
+				// Apply custom branding from database + URL overrides
 				setBranding(config.branding);
 				// Store full config for later use
 				setDbConfig(config);
@@ -201,7 +229,7 @@ function AppWithDatabaseConfig() {
 			// Better to show default chatbot than nothing at all
 			setConfigLoaded(true);
 		});
-	}, []); // Empty dependency array = run only once on mount
+	}, [urlParams]); // Re-run when URL params change (though they typically don't change after mount)
 
 	// ========================================================================
 	// CONVERSATION FLOW DEFINITION
