@@ -20,7 +20,7 @@ import { mapApiToConfig, applyURLParamOverrides } from "./utils/apiMapper"; // M
 import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
 
 // Theme configuration (settings = behavior, styles = appearance)
-import { myTripFloatingSettings, myTripFloatingStyles } from "./themes/myTripTheme";
+import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
 
 // ============================================================================
 // API CONFIGURATION
@@ -196,12 +196,20 @@ function AppWithDatabaseConfig() {
 			let config = await fetchWidgetConfigByToken(token);
 			console.log("📦 Config received from database:", config);
 			
-			// Apply URL parameter overrides on top of database config
-			if (config) {
-				console.log("🔗 Applying URL parameter overrides...");
-				config = applyURLParamOverrides(config, urlParams);
-				console.log("✨ Config after URL overrides:", config);
+			// Apply URL parameter overrides (even if config is null)
+			// If config is null, create an empty config object first
+			if (!config) {
+				console.log("🔗 No database config, creating empty config for URL overrides");
+				config = {};
 			}
+			
+			console.log("🔗 Applying URL parameter overrides...");
+			console.log("🔗 Config BEFORE URL overrides:", config);
+			console.log("🔗 URL params to apply:", urlParams);
+			config = applyURLParamOverrides(config, urlParams);
+			console.log("✨ Config AFTER URL overrides:", config);
+			console.log("✨ config.general:", config?.general);
+			console.log("✨ config.general.embedded:", config?.general?.embedded);
 			
 			// Update state with fetched configuration
 			if (config && config.branding) {
@@ -210,11 +218,13 @@ function AppWithDatabaseConfig() {
 				
 				// Apply custom branding from database + URL overrides
 				setBranding(config.branding);
-				// Store full config for later use
+				// Store full config for later use (includes URL overrides)
 				setDbConfig(config);
 			} else {
-				// Fallback to default branding if fetch fails
-				console.log("⚠️ Using default branding");
+				// No branding in database, but we still have URL overrides
+				console.log("⚠️ Using default branding (no database branding)");
+				// Store config with URL overrides even if no branding
+				setDbConfig(config);
 			}
 			
 			// Mark configuration as loaded to stop showing loading screen
@@ -379,12 +389,22 @@ function AppWithDatabaseConfig() {
 	 * Merge database configuration with default theme settings
 	 * Priority order (highest to lowest):
 	 * 1. Hardcoded overrides (audio, voice, etc.)
-	 * 2. Database config (dbConfig)
+	 * 2. Database config with URL parameter overrides (dbConfig)
 	 * 3. Default theme settings (myTripFloatingSettings)
 	 */
+	console.log("⚙️ [Settings Merge] Starting settings merge...");
+	console.log("⚙️ [Settings Merge] dbConfig:", dbConfig);
+	console.log("⚙️ [Settings Merge] dbConfig.general:", dbConfig?.general);
+	console.log("⚙️ [Settings Merge] dbConfig.general.embedded:", dbConfig?.general?.embedded);
+	
 	const mergedSettings = {
 		...myTripFloatingSettings(branding),  // Start with theme defaults
-		...(dbConfig || {}),                  // Override with database config
+		...(dbConfig || {}),                  // Override with database config (includes URL params)
+		// Merge general settings to preserve embedded mode from URL/database
+		general: {
+			...myTripFloatingSettings(branding).general,
+			...(dbConfig?.general || {}),     // Includes embedded from URL params
+		},
 		// Hardcoded overrides for specific features
 		audio: { disabled: false },           // Enable audio
 		chatInput: { botDelay: 1000 },        // Bot typing delay (1 second)
@@ -394,6 +414,26 @@ function AppWithDatabaseConfig() {
 		voice: { disabled: false },           // Enable voice
 		sensitiveInput: { asterisksCount: 6 }, // Show 6 asterisks for sensitive input
 	};
+	
+	console.log("⚙️ [Settings Merge] mergedSettings:", mergedSettings);
+	console.log("⚙️ [Settings Merge] mergedSettings.general:", mergedSettings.general);
+	console.log("⚙️ [Settings Merge] mergedSettings.general.embedded:", mergedSettings.general?.embedded);
+	
+	// ========================================================================
+	// STYLES CONFIGURATION
+	// ========================================================================
+	
+	/**
+	 * Select appropriate styles based on embedded mode
+	 * - Embedded mode: Use embedded styles (no floating button, relative positioning)
+	 * - Floating mode: Use floating styles (button in corner, fixed positioning)
+	 */
+	console.log("🎨 [Style Selection] Selecting styles...");
+	console.log("🎨 [Style Selection] mergedSettings.general?.embedded:", mergedSettings.general?.embedded);
+	const chatbotStyles = mergedSettings.general?.embedded
+		? myTripEmbeddedStyles(branding)
+		: myTripFloatingStyles(branding);
+	console.log("🎨 [Style Selection] Using:", mergedSettings.general?.embedded ? "EMBEDDED styles" : "FLOATING styles");
 	
 	// ========================================================================
 	// MAIN RENDER
@@ -415,17 +455,17 @@ function AppWithDatabaseConfig() {
 					 * - id: Unique identifier for this chatbot instance
 					 * - flow: Conversation flow object (defined above)
 					 * - settings: Behavior configuration (merged from multiple sources)
-					 * - styles: Visual appearance (from myTripFloatingStyles theme)
+					 * - styles: Visual appearance (dynamically selected based on embedded mode)
 					 * 
 					 * STYLING: Styles are applied via the 'styles' prop
-					 * The myTripFloatingStyles() function returns a styles object
-					 * that controls colors, fonts, sizes, animations, etc.
+					 * The styles function returns an object that controls colors, fonts, sizes, animations, etc.
+					 * Embedded mode uses myTripEmbeddedStyles, floating mode uses myTripFloatingStyles
 					 */}
 					<ChatBot
 						id="chatbot-id"
 						flow={flow}
 						settings={mergedSettings}
-						styles={myTripFloatingStyles(branding)}
+						styles={chatbotStyles}
 					/>
 				</div>
 			</header>

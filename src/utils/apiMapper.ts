@@ -80,16 +80,18 @@ export const mapApiToConfig = (apiData: any) => {
  * - secondaryColor: Overrides secondary theme color (with transparency)
  * - title: Overrides header title text
  * - transparency: Applied to color values (0-1 range)
+ * - embedded: Enables embedded mode ("true" or "false")
  * 
  * @param config - Base configuration (from database or defaults)
  * @param urlParams - URL parameters extracted from query string
  * @returns Configuration with URL parameter overrides applied
  * 
  * @example
- * // URL: ?primaryColor=FF5733&transparency=0.8&title=My%20Bot
+ * // URL: ?primaryColor=FF5733&transparency=0.8&title=My%20Bot&embedded=true
  * const config = applyURLParamOverrides(baseConfig, urlParams);
  * // config.branding.primary = "#FF5733CC" (with 80% transparency)
  * // config.header.title = "My Bot"
+ * // config.general.embedded = true
  */
 export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 	// Create a deep copy to avoid mutating the original config
@@ -156,5 +158,16 @@ export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 		overriddenConfig.header.title = urlParams.title;
 	}
 	
+	// Apply embedded mode override
+	if (urlParams.embedded !== undefined) {
+		console.log("🔧 [apiMapper] Applying embedded override");
+		console.log("🔧 [apiMapper] urlParams.embedded:", urlParams.embedded);
+		console.log("🔧 [apiMapper] Converting to boolean:", urlParams.embedded === "true");
+		overriddenConfig.general = overriddenConfig.general || {};
+		overriddenConfig.general.embedded = urlParams.embedded === "true";
+		console.log("🔧 [apiMapper] overriddenConfig.general.embedded:", overriddenConfig.general.embedded);
+	}
+	
+	console.log("🔧 [apiMapper] Final overriddenConfig:", overriddenConfig);
 	return overriddenConfig;
 };

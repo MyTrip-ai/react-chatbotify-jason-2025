@@ -14,6 +14,7 @@ export type URLParams = {
 	secondaryColor?: string;
 	title?: string;
 	transparency?: string;
+	embedded?: string;
 };
 
 /**
@@ -28,6 +29,7 @@ export type URLParams = {
  * - secondaryColor: Secondary theme color (hex)
  * - title: Header title text
  * - transparency: Color transparency (0-1)
+ * - embedded: Enable embedded mode ("true" or "false")
  * 
  * @returns Object containing all URL parameters
  * 
@@ -40,7 +42,7 @@ export const useURLParams = (): URLParams => {
 	return useMemo(() => {
 		const searchParams = new URLSearchParams(window.location.search);
 		
-		return {
+		const params = {
 			token: searchParams.get("token") || undefined,
 			avatar: searchParams.get("avatar") || undefined,
 			logoUrl: searchParams.get("logoUrl") || undefined,
@@ -50,6 +52,14 @@ export const useURLParams = (): URLParams => {
 			secondaryColor: searchParams.get("secondaryColor") || undefined,
 			title: searchParams.get("title") || undefined,
 			transparency: searchParams.get("transparency") || undefined,
+			embedded: searchParams.get("embedded") || undefined,
 		};
+		
+		console.log("🔗 [useURLParams] URL:", window.location.href);
+		console.log("🔗 [useURLParams] Search string:", window.location.search);
+		console.log("🔗 [useURLParams] Extracted params:", params);
+		console.log("🔗 [useURLParams] Embedded value:", params.embedded);
+		
+		return params;
 	}, []);
 };

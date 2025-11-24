@@ -23,6 +23,9 @@ export const getButtonConfig = (
 	settings: Settings,
 	buttonComponentMap: {[x: string]: () => JSX.Element}
 ): ButtonConfig => {
+	console.log("🔘 [buttonBuilder] Building button config...");
+	console.log("🔘 [buttonBuilder] settings.general?.embedded:", settings.general?.embedded);
+	
 	const buttonDisabledMap = {
 		[Button.AUDIO_BUTTON]: settings.audio?.disabled,
 		[Button.CLOSE_CHAT_BUTTON]: settings.general?.embedded,
@@ -32,6 +35,9 @@ export const getButtonConfig = (
 		[Button.SEND_MESSAGE_BUTTON]: false,
 		[Button.VOICE_MESSAGE_BUTTON]: settings.voice?.disabled
 	};
+	
+	console.log("🔘 [buttonBuilder] buttonDisabledMap:", buttonDisabledMap);
+	console.log("🔘 [buttonBuilder] CLOSE_CHAT_BUTTON disabled:", buttonDisabledMap[Button.CLOSE_CHAT_BUTTON]);
 
 	// cache to store created buttons
 	const buttonCache: { [key: string]: JSX.Element } = {};
