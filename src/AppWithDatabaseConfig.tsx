@@ -430,10 +430,28 @@ function AppWithDatabaseConfig() {
 	 */
 	console.log("🎨 [Style Selection] Selecting styles...");
 	console.log("🎨 [Style Selection] mergedSettings.general?.embedded:", mergedSettings.general?.embedded);
-	const chatbotStyles = mergedSettings.general?.embedded
+	
+	let chatbotStyles = mergedSettings.general?.embedded
 		? myTripEmbeddedStyles(branding)
 		: myTripFloatingStyles(branding);
+	
 	console.log("🎨 [Style Selection] Using:", mergedSettings.general?.embedded ? "EMBEDDED styles" : "FLOATING styles");
+	
+	// Apply size overrides from URL parameters if present
+	if (dbConfig?.chatWindowSize) {
+		console.log("📏 [Size Override] Applying size overrides from URL params");
+		console.log("📏 [Size Override] chatWindowSize:", dbConfig.chatWindowSize);
+		
+		chatbotStyles = {
+			...chatbotStyles,
+			chatWindowStyle: {
+				...chatbotStyles.chatWindowStyle,
+				...dbConfig.chatWindowSize, // Apply width, height, maxWidth, maxHeight
+			},
+		};
+		
+		console.log("📏 [Size Override] Updated chatWindowStyle:", chatbotStyles.chatWindowStyle);
+	}
 	
 	// ========================================================================
 	// MAIN RENDER

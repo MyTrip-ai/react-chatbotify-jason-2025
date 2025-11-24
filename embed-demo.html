@@ -377,11 +377,19 @@
             
             <!-- ============================================ -->
             <!-- EMBEDDED CHATBOT WIDGET -->
+            <!-- You can control size via URL parameters:
+                 - width: Fixed width in pixels (e.g., width=600)
+                 - height: Fixed height in pixels (e.g., height=700)
+                 - maxWidth: Maximum width constraint
+                 - maxHeight: Maximum height constraint
+                 
+                 Example: ?embedded=true&width=550&height=650
+            -->
             <!-- ============================================ -->
             <div id="chatbot-container">
                 <iframe 
                     id="chatbot-iframe"
-                    src="http://localhost:3000?embedded=true"
+                    src="http://localhost:3000?embedded=true&width=550&height=650"
                     title="AI Travel Assistant"
                     allow="microphone">
                 </iframe>

@@ -81,17 +81,22 @@ export const mapApiToConfig = (apiData: any) => {
  * - title: Overrides header title text
  * - transparency: Applied to color values (0-1 range)
  * - embedded: Enables embedded mode ("true" or "false")
+ * - width: Chat window width in pixels (e.g., "600")
+ * - height: Chat window height in pixels (e.g., "700")
+ * - maxWidth: Maximum chat window width in pixels
+ * - maxHeight: Maximum chat window height in pixels
  * 
  * @param config - Base configuration (from database or defaults)
  * @param urlParams - URL parameters extracted from query string
  * @returns Configuration with URL parameter overrides applied
  * 
  * @example
- * // URL: ?primaryColor=FF5733&transparency=0.8&title=My%20Bot&embedded=true
+ * // URL: ?embedded=true&width=600&height=700&primaryColor=FF5733
  * const config = applyURLParamOverrides(baseConfig, urlParams);
- * // config.branding.primary = "#FF5733CC" (with 80% transparency)
- * // config.header.title = "My Bot"
  * // config.general.embedded = true
+ * // config.chatWindowSize.width = "600px"
+ * // config.chatWindowSize.height = "700px"
+ * // config.branding.primary = "#FF5733"
  */
 export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 	// Create a deep copy to avoid mutating the original config
@@ -166,6 +171,30 @@ export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 		overriddenConfig.general = overriddenConfig.general || {};
 		overriddenConfig.general.embedded = urlParams.embedded === "true";
 		console.log("🔧 [apiMapper] overriddenConfig.general.embedded:", overriddenConfig.general.embedded);
+	}
+	
+	// Apply size overrides (width, height, maxWidth, maxHeight)
+	// These are stored in a special chatWindowSize object that will be applied to styles later
+	if (urlParams.width || urlParams.height || urlParams.maxWidth || urlParams.maxHeight) {
+		console.log("🔧 [apiMapper] Applying size overrides");
+		overriddenConfig.chatWindowSize = overriddenConfig.chatWindowSize || {};
+		
+		if (urlParams.width) {
+			overriddenConfig.chatWindowSize.width = `${urlParams.width}px`;
+			console.log("🔧 [apiMapper] width:", overriddenConfig.chatWindowSize.width);
+		}
+		if (urlParams.height) {
+			overriddenConfig.chatWindowSize.height = `${urlParams.height}px`;
+			console.log("🔧 [apiMapper] height:", overriddenConfig.chatWindowSize.height);
+		}
+		if (urlParams.maxWidth) {
+			overriddenConfig.chatWindowSize.maxWidth = `${urlParams.maxWidth}px`;
+			console.log("🔧 [apiMapper] maxWidth:", overriddenConfig.chatWindowSize.maxWidth);
+		}
+		if (urlParams.maxHeight) {
+			overriddenConfig.chatWindowSize.maxHeight = `${urlParams.maxHeight}px`;
+			console.log("🔧 [apiMapper] maxHeight:", overriddenConfig.chatWindowSize.maxHeight);
+		}
 	}
 	
 	console.log("🔧 [apiMapper] Final overriddenConfig:", overriddenConfig);

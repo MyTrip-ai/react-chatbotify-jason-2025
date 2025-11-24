@@ -150,18 +150,48 @@ To embed the chatbot in your own website:
 You can combine `embedded=true` with other URL parameters:
 
 ```
-http://localhost:3000?embedded=true&primaryColor=FF5733&title=Support%20Chat
+http://localhost:3000?embedded=true&width=600&height=700&primaryColor=FF5733&title=Support%20Chat
 ```
 
-Supported parameters:
-- `embedded` - Enable embedded mode
+### Supported Parameters
+
+**Mode & Sizing:**
+- `embedded` - Enable embedded mode ("true" or "false")
+- `width` - Chat window width in pixels (e.g., "600")
+- `height` - Chat window height in pixels (e.g., "700")
+- `maxWidth` - Maximum chat window width in pixels
+- `maxHeight` - Maximum chat window height in pixels
+
+**Branding:**
 - `token` - Authentication token
 - `avatar` - Bot avatar URL
 - `logoUrl` - Header logo URL
-- `primaryColor` - Primary theme color
-- `secondaryColor` - Secondary theme color
+- `primaryColor` - Primary theme color (hex without #)
+- `secondaryColor` - Secondary theme color (hex without #)
 - `title` - Header title
 - `transparency` - Color transparency (0-1)
+
+### Size Parameter Examples
+
+**Fixed size:**
+```
+http://localhost:3000?embedded=true&width=800&height=600
+```
+
+**Responsive with max constraints:**
+```
+http://localhost:3000?embedded=true&maxWidth=1200&maxHeight=800
+```
+
+**Height only (width fills container):**
+```
+http://localhost:3000?embedded=true&height=500
+```
+
+**All size parameters:**
+```
+http://localhost:3000?embedded=true&width=600&height=700&maxWidth=1000&maxHeight=900
+```
 
 ## Troubleshooting
 

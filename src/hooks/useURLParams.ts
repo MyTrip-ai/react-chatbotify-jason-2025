@@ -15,6 +15,10 @@ export type URLParams = {
 	title?: string;
 	transparency?: string;
 	embedded?: string;
+	width?: string;
+	height?: string;
+	maxWidth?: string;
+	maxHeight?: string;
 };
 
 /**
@@ -30,6 +34,10 @@ export type URLParams = {
  * - title: Header title text
  * - transparency: Color transparency (0-1)
  * - embedded: Enable embedded mode ("true" or "false")
+ * - width: Chat window width in pixels (e.g., "600")
+ * - height: Chat window height in pixels (e.g., "700")
+ * - maxWidth: Maximum chat window width in pixels
+ * - maxHeight: Maximum chat window height in pixels
  * 
  * @returns Object containing all URL parameters
  * 
@@ -53,12 +61,16 @@ export const useURLParams = (): URLParams => {
 			title: searchParams.get("title") || undefined,
 			transparency: searchParams.get("transparency") || undefined,
 			embedded: searchParams.get("embedded") || undefined,
+			width: searchParams.get("width") || undefined,
+			height: searchParams.get("height") || undefined,
+			maxWidth: searchParams.get("maxWidth") || undefined,
+			maxHeight: searchParams.get("maxHeight") || undefined,
 		};
 		
-		console.log("🔗 [useURLParams] URL:", window.location.href);
-		console.log("🔗 [useURLParams] Search string:", window.location.search);
-		console.log("🔗 [useURLParams] Extracted params:", params);
-		console.log("🔗 [useURLParams] Embedded value:", params.embedded);
+		console.log(" [useURLParams] URL:", window.location.href);
+		console.log(" [useURLParams] Search string:", window.location.search);
+		console.log(" [useURLParams] Extracted params:", params);
+		console.log(" [useURLParams] Embedded value:", params.embedded);
 		
 		return params;
 	}, []);
