@@ -154,7 +154,7 @@ export const myTripEmbeddedStyles = (branding: BrandTokens = defaultBrandTokens)
 		width: "100%",
 		height: "auto",
 		boxShadow: "none",
-		padding: 0,
+		padding: "16px 24px", // Keep the same padding as floating mode
 	},
 	chatButtonStyle: {
 		display: "none",
