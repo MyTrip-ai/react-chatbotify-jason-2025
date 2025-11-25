@@ -377,13 +377,20 @@
             
             <!-- ============================================ -->
             <!-- EMBEDDED CHATBOT WIDGET -->
-            <!-- You can control size via URL parameters:
-                 - width: Fixed width in pixels (e.g., width=600)
-                 - height: Fixed height in pixels (e.g., height=700)
-                 - maxWidth: Maximum width constraint
-                 - maxHeight: Maximum height constraint
-                 
-                 Example: ?embedded=true&width=550&height=650
+            <!-- 
+                RECOMMENDED APPROACH:
+                - Control size via the parent container (div#chatbot-container)
+                - Widget automatically fills 100% width and height of parent
+                - This is the most flexible and maintainable approach
+                
+                ALTERNATIVE (URL Parameters):
+                You can also override size via URL parameters:
+                - width: Fixed width in pixels (e.g., width=600)
+                - height: Fixed height in pixels (e.g., height=700)
+                - maxWidth: Maximum width constraint
+                - maxHeight: Maximum height constraint
+                
+                Example: ?embedded=true&width=550&height=650
             -->
             <!-- ============================================ -->
             <div id="chatbot-container">

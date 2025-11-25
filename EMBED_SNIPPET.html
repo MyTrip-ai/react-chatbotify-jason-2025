@@ -1,0 +1,187 @@
+<!-- 
+=============================================================================
+  MyTrip.AI Chatbot Widget - Production-Ready Embed Snippet
+=============================================================================
+
+  QUICK START:
+  1. Copy this entire snippet
+  2. Paste it into your website's HTML
+  3. Replace YOUR_BOT_ID with your actual bot configuration ID
+  4. Replace YOUR_DOMAIN with your production domain (e.g., https://chat.mytrip.ai)
+  5. Adjust the container size as needed
+
+  The widget will automatically fill 100% of the parent container's size.
+=============================================================================
+-->
+
+<!-- MyTrip.AI Chatbot Widget Container -->
+<div id="mytrip-chatbot-widget" style="
+  width: 100%;
+  max-width: 500px;
+  height: 650px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+">
+  <iframe 
+    src="http://localhost:3002/686f2d8101f78ff2b397c172?embedded=true"
+    style="
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    "
+    title="AI Travel Assistant"
+    allow="microphone"
+    loading="lazy">
+  </iframe>
+</div>
+
+<!-- 
+=============================================================================
+  CUSTOMIZATION OPTIONS
+=============================================================================
+
+  1. CONTAINER SIZE (Recommended Method):
+     Adjust the parent div's width and height:
+     
+     Fixed size:
+     <div style="width: 400px; height: 600px;">
+     
+     Responsive:
+     <div style="width: 100%; max-width: 500px; height: 650px;">
+     
+     Full viewport:
+     <div style="width: 100%; height: 100vh;">
+
+  2. URL PARAMETERS (Alternative Method):
+     Add parameters to the iframe src URL:
+     
+     Custom size:
+     ?embedded=true&width=400&height=600
+     
+     Custom colors:
+     ?embedded=true&primaryColor=FF5733&secondaryColor=00A8CC
+     
+     Custom title:
+     ?embedded=true&title=Support%20Chat
+     
+     All together:
+     ?embedded=true&width=400&height=600&primaryColor=FF5733&title=Support
+
+  3. STYLING:
+     Add CSS classes or inline styles to the container div:
+     
+     <div id="mytrip-chatbot-widget" class="my-custom-class" style="...">
+
+=============================================================================
+  COMMON LAYOUTS
+=============================================================================
+
+  SIDEBAR (Fixed Right):
+  <div style="
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    z-index: 1000;
+  ">
+    <iframe src="https://YOUR_DOMAIN/YOUR_BOT_ID?embedded=true" 
+            style="width: 100%; height: 100%; border: none;">
+    </iframe>
+  </div>
+
+  FULL PAGE:
+  <div style="width: 100%; height: 100vh; margin: 0; padding: 0;">
+    <iframe src="https://YOUR_DOMAIN/YOUR_BOT_ID?embedded=true" 
+            style="width: 100%; height: 100%; border: none;">
+    </iframe>
+  </div>
+
+  CENTERED WITH SHADOW:
+  <div style="
+    width: 100%;
+    max-width: 500px;
+    height: 650px;
+    margin: 40px auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+  ">
+    <iframe src="https://YOUR_DOMAIN/YOUR_BOT_ID?embedded=true" 
+            style="width: 100%; height: 100%; border: none;">
+    </iframe>
+  </div>
+
+=============================================================================
+  MOBILE RESPONSIVE EXAMPLE
+=============================================================================
+
+  <style>
+    .chatbot-container {
+      width: 100%;
+      height: 600px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    @media (max-width: 768px) {
+      .chatbot-container {
+        height: 500px;
+        max-width: 100%;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .chatbot-container {
+        height: calc(100vh - 100px);
+      }
+    }
+  </style>
+
+  <div class="chatbot-container">
+    <iframe 
+      src="https://YOUR_DOMAIN/YOUR_BOT_ID?embedded=true"
+      style="width: 100%; height: 100%; border: none;">
+    </iframe>
+  </div>
+
+=============================================================================
+  WORDPRESS INTEGRATION
+=============================================================================
+
+  1. Go to your page/post editor
+  2. Add a "Custom HTML" block
+  3. Paste the snippet above
+  4. Publish!
+
+=============================================================================
+  TROUBLESHOOTING
+=============================================================================
+
+  Widget not loading?
+  - Check that YOUR_DOMAIN and YOUR_BOT_ID are correct
+  - Ensure you're using HTTPS in production
+  - Check browser console for errors
+
+  Widget too small/large?
+  - Adjust the parent container's width/height
+  - Use min-height to prevent collapsing
+  - Check for conflicting CSS
+
+  Scrolling issues?
+  - Ensure iframe has display: block
+  - Check parent has explicit height
+  - Verify no overflow: hidden on parents
+
+=============================================================================
+  SUPPORT
+=============================================================================
+
+  Email: support@mytrip.ai
+  Documentation: https://docs.mytrip.ai
+
+=============================================================================
+-->

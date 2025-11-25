@@ -540,6 +540,19 @@ function AppWithDatabaseConfig() {
 	// MAIN RENDER
 	// ========================================================================
 	
+	// In embedded mode, render without wrapper divs to allow full-screen fill
+	if (mergedSettings.general?.embedded) {
+		return (
+			<ChatBot
+				id="chatbot-id"
+				flow={flow}
+				settings={mergedSettings}
+				styles={chatbotStyles}
+			/>
+		);
+	}
+	
+	// In floating mode, use centered layout with wrapper
 	return (
 		<div className="App">
 			<header className="App-header">

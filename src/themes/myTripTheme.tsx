@@ -152,9 +152,10 @@ export const myTripEmbeddedStyles = (branding: BrandTokens = defaultBrandTokens)
 		...glassChatWindow(branding),
 		position: "relative",
 		width: "100%",
-		height: "auto",
+		height: "100%", // Fill parent container height by default
 		boxShadow: "none",
-		padding: "16px 24px", // Keep the same padding as floating mode
+		padding: "20px 32px", // Comfortable padding for embedded mode
+		minWidth: "320px", // Ensure minimum width for usability
 	},
 	chatButtonStyle: {
 		display: "none",

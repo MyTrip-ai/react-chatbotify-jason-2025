@@ -115,7 +115,12 @@ const ChatBotContainer = ({
 			};
 		}
 
-		return {...styles.chatWindowStyle};
+		// For embedded mode, ensure 100% width and height
+		return {
+			...styles.chatWindowStyle,
+			width: "100%",
+			height: "100%",
+		};
 	}
 
 	/**

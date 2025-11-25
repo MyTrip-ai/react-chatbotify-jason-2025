@@ -21,6 +21,13 @@
 	z-index: 9999;
 }
 
+.rcb-window-embedded {
+	width: 100% !important;
+	height: 100% !important;
+	display: flex;
+	flex-direction: column;
+}
+
 /* Chat Window */
 
 .rcb-chat-window {
@@ -42,11 +49,15 @@
 }
 
 .rcb-window-embedded .rcb-chat-window {
-	position: relative;
+	position: relative !important;
 	opacity: 1;
 	visibility: visible;
 	right: auto;
 	bottom: auto;
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 400px; /* Ensure minimum usable height */
+	flex: 1; /* Allow it to grow and fill available space */
 }
 
 .rcb-window-open .rcb-chat-window {

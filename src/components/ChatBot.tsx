@@ -77,16 +77,21 @@ const ChatBot = ({
 		</>
 	)
 
+	// Get container style - in embedded mode, fill 100% height
+	const containerStyle = finalSettings?.general?.embedded 
+		? { width: "95%", height: "100vh", display: "flex", flexDirection: "column" as const } 
+		: undefined;
+
 	return (
 		chatBotContext == null ? ( 
 			<ChatBotProvider>
 				<style ref={styleRootRef}/>
-				<div id={finalBotId}>{renderChatBot()}</div>
+				<div id={finalBotId} style={containerStyle}>{renderChatBot()}</div>
 			</ChatBotProvider>
 		) : (
 			<>
 				<style ref={styleRootRef}/>
-				<div id={finalBotId}>{renderChatBot()}</div>
+				<div id={finalBotId} style={containerStyle}>{renderChatBot()}</div>
 			</>
 		)
 	)

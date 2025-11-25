@@ -79,8 +79,8 @@ Compare both modes by visiting:
 | Tooltip | ✅ Visible | ❌ Hidden |
 | Close Button | ✅ Visible | ❌ Hidden |
 | Position | Fixed (bottom-right) | Relative (in container) |
-| Width | 420px | 100% |
-| Height | 580px | auto |
+| Width | 420px | 100% (fills parent) |
+| Height | 580px | 100% (fills parent) |
 | Z-Index | 10000 | none |
 | Box Shadow | Yes | No |
 
@@ -105,8 +105,9 @@ export const myTripEmbeddedStyles = (branding) => ({
   chatWindowStyle: {
     position: "relative",
     width: "100%",
-    height: "auto",
+    height: "100%", // Fills parent container
     boxShadow: "none",
+    padding: "16px 24px",
   },
   chatButtonStyle: {
     display: "none",
@@ -133,17 +134,22 @@ if (urlParams.embedded !== undefined) {
 
 To embed the chatbot in your own website:
 
+### Recommended Approach: Container-Based Sizing
+
+The widget automatically fills 100% width and height of its parent container. Simply control the size via the parent div:
+
 ```html
+<!-- Control size via parent container (RECOMMENDED) -->
 <div style="width: 600px; height: 700px; border: 1px solid #ccc;">
   <iframe 
     src="http://localhost:3000?embedded=true"
-    width="100%" 
-    height="100%" 
-    frameborder="0"
+    style="width: 100%; height: 100%; border: none;"
     allow="microphone">
   </iframe>
 </div>
 ```
+
+This approach is more flexible and maintainable than URL parameters.
 
 ## Additional URL Parameters
 
@@ -157,10 +163,12 @@ http://localhost:3000?embedded=true&width=600&height=700&primaryColor=FF5733&tit
 
 **Mode & Sizing:**
 - `embedded` - Enable embedded mode ("true" or "false")
-- `width` - Chat window width in pixels (e.g., "600")
-- `height` - Chat window height in pixels (e.g., "700")
+- `width` - Chat window width in pixels (e.g., "600") - **overrides default 100%**
+- `height` - Chat window height in pixels (e.g., "700") - **overrides default 100%**
 - `maxWidth` - Maximum chat window width in pixels
 - `maxHeight` - Maximum chat window height in pixels
+
+**Note:** By default, the widget fills 100% of its parent container. URL size parameters override this behavior when specified.
 
 **Branding:**
 - `token` - Authentication token
