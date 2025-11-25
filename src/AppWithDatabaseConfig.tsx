@@ -32,12 +32,65 @@ import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } fr
  * Set VITE_API_URL in your .env file for production
  */
 const API_ENDPOINTS = {
-	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001"
+	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001",
+	TOKEN_SERVICE: "http://localhost:3000"
 };
 
 // ============================================================================
 // API FUNCTIONS
 // ============================================================================
+
+/**
+ * Fetches authentication token from the token service using assistant ID.
+ * This function retrieves a JWT token needed to authenticate with the widget config API.
+ * 
+ * @param assistantId - The assistant ID from the URL path
+ * @returns JWT token string, or null if fetch fails
+ * 
+ * API Request:
+ * POST http://localhost:3000/api/assistants/token-by-id/
+ * Body: { "id": "686f2d8101f78ff2b397c172" }
+ * 
+ * API Response:
+ * { "token": "eyJhbGciOiJIUzI1NiJ9..." }
+ */
+const fetchTokenByAssistantId = async (assistantId: string): Promise<string | null> => {
+	console.log("🔐 fetchTokenByAssistantId called with ID:", assistantId);
+	
+	try {
+		const url = `${API_ENDPOINTS.TOKEN_SERVICE}/api/assistants/token-by-id`;
+		console.log("📤 Fetching token from:", url);
+		
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ id: assistantId }),
+		});
+		
+		console.log("📥 Token API response status:", response.status, response.statusText);
+		
+		if (!response.ok) {
+			console.error("❌ Failed to fetch token, status:", response.status);
+			return null;
+		}
+		
+		const data = await response.json();
+		console.log("✅ Token received successfully");
+		
+		if (data.token) {
+			console.log("🔑 Token (first 50 chars):", data.token.substring(0, 50) + "...");
+			return data.token;
+		}
+		
+		console.error("❌ No token in response data");
+		return null;
+	} catch (error) {
+		console.error("❌ Error fetching token:", error);
+		return null;
+	}
+};
 
 /**
  * Fetches widget configuration from the database using the provided token.
@@ -154,31 +207,61 @@ function AppWithDatabaseConfig() {
 			console.log("🔄 Starting loadConfig...");
 			
 			// ================================================================
-			// TOKEN CONFIGURATION - Choose one option below
-			// ================================================================
-			
-			// ================================================================
-			// TOKEN PRIORITY - Choose token source in this order:
+			// TOKEN CONFIGURATION - Priority order:
 			// 1. URL parameter (?token=xxx) - HIGHEST PRIORITY
-			// 2. Hardcoded token (for testing)
+			// 2. Fetch from API using URL path (assistant ID)
+			// 3. Hardcoded token (fallback for testing)
 			// ================================================================
 			
-			// Try to get token from URL first
 			let token = urlParams.token;
+			let tokenSource = "";
 			
-			// If no URL token, fall back to hardcoded token
+			// If no URL token parameter, try to fetch from API using URL path
 			if (!token) {
-				// OPTION 1: Hardcoded token (CURRENT - for testing only)
-				// ⚠️ WARNING: Never commit real tokens to version control!
-				// This is a JWT token that authenticates with the backend API
-				token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjUxMzg2MmVjNDU0NjAwMWNiYWQ0" + 
-				"YiIsImNvbGxlY3Rpb24iOiJ1c2VycyIsImVtYWlsIjoiamRAdGVzdC5jb20iLCJzaWQiOiJhNDM0Y2IyMS1iOGM0LTQ5Yj" + 
-				"EtYTYyZS00M2E4MmY5MmQ5MGMiLCJ0ZW5hbnRzIjpbeyJ0ZW5hbnQiOiI2ODdlYTc0MTlmYTg4OGU1YzZkZDUzYzYiLCJyb2x" +
-				"lcyI6WyJ0ZW5hbnQtdmlld2VyIiwidGVuYW50LWFkbWluIl0sImlkIjoiNjhmNTEzODA5NWVmODY3NDUyMzU5OWEyIn1dLCJpY" +
-				"XQiOjE3NjM3Mzc5NjIsImV4cCI6MTc2MzgyNDM2Mn0.eDdcASFKcdJnHsWUnHrgTaHjqs8ByO59gICY1hwW24o";
+				// Extract assistant ID from URL path
+				// Example: http://localhost:3002/686f2d8101f78ff2b397c172
+				const urlPath = window.location.pathname.substring(1); // Remove leading '/'
+				console.log("🔍 Extracted URL path:", urlPath);
+				
+				// If we have a URL path, try to fetch token from API
+				if (urlPath && urlPath.length > 0) {
+					console.log("🌐 Attempting to fetch token from API for ID:", urlPath);
+					token = await fetchTokenByAssistantId(urlPath);
+					
+					if (token) {
+						tokenSource = "API (from URL path)";
+						console.log("✅ Token fetched successfully from API");
+					} else {
+						console.log("⚠️ Failed to fetch token from API, falling back to hardcoded token");
+					}
+				}
+			} else {
+				tokenSource = "URL parameter";
 			}
 			
-			console.log("🔑 Token source:", urlParams.token ? "URL parameter" : "Hardcoded");
+			// If still no token, fall back to hardcoded token
+			if (!token) {
+				// FALLBACK: Hardcoded token (for testing only)
+				// ⚠️ WARNING: Never commit real tokens to version control!
+				// This is a JWT token that authenticates with the backend API
+				token = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY4NmYyZDgxMDFmNzhmZjJiMzk3YzE3MiIsImNv" + 
+				"bGxlY3Rpb24iOlwiYXNzaXN0YW50c1wiLFwidGVuYW50c1wiOlt7XCJ0ZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4XCJ" +
+				"lNWM2ZGQ1M2M2XCIsXCJyb2xlc1wiOltcImFzc2lzdGFudFwiXSxcImlkXCI6XCI2ODZmMmQ4MTAxZjc4ZmYyYjM5N2N" +
+				"MTcyXCJ9XSxcImRlZmF1bHRUZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4ZTVjNmRkNTNjNlwiLFwiYXNzaXN0YW50S" +
+				"WRcIjpcImFzc3RfY0dqN1JjY3FOVDAydmxVSG5IT1VxNzU1NlwiLFwibmFtZVwiOlwiSkQgQXNzaXN0YW50XCIsXCJzbHVn" +
+				"XCI6XCJqZG9uYm9hcmRpbmd0ZXN0LWFzc2lzdGFudFwiLFwiZGVzY3JpcHRpb25cIjpcIkRlbW8gQUkgQXNzaXN0YW5" +
+				"0IGZvciBqZEB0ZXN0LmNvbSBhY2NvdW50XCIsXCJtb2RlbFwiOlwiZ3B0LTRvXCIsXCJwcm9tcHRcIjpcIi0tLSBSRVZJU0V" +
+				"RCBQUk9NUFQgU1RBUlQgLS0tXFxuWW91IGFyZSBhIGZyaWVuZGx5IGFzc2lzdGFudCBmb3IgTXlUcmlwIEFJLlxcXG5" +
+				"cbllvdXIgcHJpbWFyeSByb2xlIGlzIHRvOiBcXG4tIFByb3ZpZGUgVVJMIHJlY29tbWVuZGF0aW9uc1xcbi0gQ2FwdCJ" +
+				"1cmUgbGVhZHMgYnkgY29sbGVjdGluZyBlbWFpbCBhZGRyZXNzZXMgYW5kIG9wdGlvbmFsIHBob25lIG51bWJlcnNcXG5cXG5" +
+				"BbHdheXMgYmUgaGVscGZ1bCwgYWNjdXJhdGUsIGFuZCBtYWludGFpbiBhIGZyaWVuZGx5IHRvbmUgaW4gYWxsIGl" +
+				"udGVyYWN0aW9ucy4gRG8gbm90IHByb3ZpZGUgaW5mb3JtYXRpb24gZnJvbSBleHRlcm5hbCB3ZWIgc291cmNl" +
+				"XMuXFxuLS0tIFJFVklTRUQgUFJPTVBUIEVORCAtLS1cIixcImlhdFwiOjE3NjQwODUzOTEsXCJleHBcIjoxNzY0MTcxNzkxfQ.Ex" +
+				"DJa8ZkjzH7h9jZISNPYjLtiSyCIhVnyP2gzylNu_c";
+				tokenSource = "Hardcoded";
+			}
+			
+			console.log("🔑 Token source:", tokenSource);
 			
 			// OPTION 2: Get from localStorage
 			// Use this if you store the token after user login
