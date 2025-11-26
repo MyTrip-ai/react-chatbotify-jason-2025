@@ -15,10 +15,12 @@ import { BrandTokens, defaultBrandTokens } from "./types/BrandTokens"; // Brandi
 
 // Utility functions
 import { mapApiToConfig, applyURLParamOverrides } from "./utils/apiMapper"; // Maps API response to chatbot config
+import { mapStaticConfigToAppConfig } from "./utils/staticConfigMapper"; // Maps static config to app format
 
 // Custom hooks
 import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
 import { useSessionManager } from "./hooks/useSessionManager"; // Session ID management
+import { useStaticConfig, useCurrentPath } from "./hooks/useStaticConfig"; // Static configuration
 
 // Chat service functions
 import { getChatHistory, callAmaliaAPI } from "./services/chatService";
@@ -202,6 +204,12 @@ function AppWithDatabaseConfig() {
 	
 	// Get or create session ID for tracking user sessions
 	const sessionId = useSessionManager();
+	
+	// Get static configuration based on URL path
+	const staticConfig = useStaticConfig();
+	
+	// Get current URL path
+	const currentPath = useCurrentPath();
 
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
@@ -218,84 +226,104 @@ function AppWithDatabaseConfig() {
 	useEffect(() => {
 		const loadConfig = async () => {
 			console.log("🔄 Starting loadConfig...");
+			console.log("🗺️ Static config available:", !!staticConfig);
+			console.log("📍 Current path:", currentPath);
 			
 			// ================================================================
-			// TOKEN CONFIGURATION - Priority order:
-			// 1. URL parameter (?token=xxx) - HIGHEST PRIORITY
-			// 2. Fetch from API using URL path (assistant ID)
-			// 3. Hardcoded token (fallback for testing)
+			// CONFIGURATION PRIORITY ORDER (as per documentation):
+			// 1. Default Config (fallback)
+			// 2. Static Path Config (if path matches chatbotConfig)
+			// 3. Database Config (if token available)
+			// 4. URL Parameters (override specific properties)
 			// ================================================================
 			
+			let config: any = null;
+			let configSource = "";
+			
+			// ================================================================
+			// STEP 1: Check for Static Configuration
+			// If we have a static config for this path, use it as base
+			// ================================================================
+			if (staticConfig) {
+				console.log("✅ Using static configuration for path:", currentPath);
+				config = mapStaticConfigToAppConfig(staticConfig);
+				configSource = `Static config (${currentPath})`;
+			}
+			
+			// ================================================================
+			// STEP 2: Try to fetch Database Configuration
+			// Only attempt if we have a token OR can fetch one
+			// Database config overrides static config if available
+			// ================================================================
 			let token = urlParams.token;
 			let tokenSource = "";
 			
 			// If no URL token parameter, try to fetch from API using URL path
-			if (!token) {
-				// Extract assistant ID from URL path
-				// Example: http://localhost:3002/686f2d8101f78ff2b397c172
-				const urlPath = window.location.pathname.substring(1); // Remove leading '/'
-				console.log("🔍 Extracted URL path:", urlPath);
+			// Only try if path looks like an ID (not a static config path)
+			if (!token && !staticConfig && currentPath) {
+				console.log("🌐 Attempting to fetch token from API for ID:", currentPath);
+				token = await fetchTokenByAssistantId(currentPath);
 				
-				// If we have a URL path, try to fetch token from API
-				if (urlPath && urlPath.length > 0) {
-					console.log("🌐 Attempting to fetch token from API for ID:", urlPath);
-					token = await fetchTokenByAssistantId(urlPath);
-					
-					if (token) {
-						tokenSource = "API (from URL path)";
-						console.log("✅ Token fetched successfully from API");
-					} else {
-						console.log("⚠️ Failed to fetch token from API, falling back to hardcoded token");
-					}
+				if (token) {
+					tokenSource = "API (from URL path)";
+					console.log("✅ Token fetched successfully from API");
+				} else {
+					console.log("⚠️ Failed to fetch token from API");
 				}
-			} else {
+			} else if (token) {
 				tokenSource = "URL parameter";
 			}
 			
-			// If still no token, fall back to hardcoded token
-			if (!token) {
+			// If we have a token, fetch database config (overrides static config)
+			if (token) {
+				console.log("🔑 Token source:", tokenSource);
+				console.log("📡 Calling fetchWidgetConfigByToken...");
+				const dbConfig = await fetchWidgetConfigByToken(token);
+				console.log("📦 Config received from database:", dbConfig);
+				
+				if (dbConfig) {
+					// Database config overrides static config
+					config = dbConfig;
+					configSource = `Database config (${tokenSource})`;
+					console.log("✅ Using database config (overrides static config)");
+				}
+			}
+			
+			// ================================================================
+			// STEP 3: If no config yet, use hardcoded fallback token
+			// This is only for testing/development
+			// ================================================================
+			if (!config && !staticConfig) {
+				console.log("⚠️ No static or database config, trying hardcoded token...");
 				// FALLBACK: Hardcoded token (for testing only)
-				// ⚠️ WARNING: Never commit real tokens to version control!
-				// This is a JWT token that authenticates with the backend API
-				token = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY4NmYyZDgxMDFmNzhmZjJiMzk3YzE3MiIsImNv" + 
+				const fallbackToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY4NmYyZDgxMDFmNzhmZjJiMzk3YzE3MiIsImNv" + 
 				"bGxlY3Rpb24iOlwiYXNzaXN0YW50c1wiLFwidGVuYW50c1wiOlt7XCJ0ZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4XCJ" +
 				"lNWM2ZGQ1M2M2XCIsXCJyb2xlc1wiOltcImFzc2lzdGFudFwiXSxcImlkXCI6XCI2ODZmMmQ4MTAxZjc4ZmYyYjM5N2N" +
 				"MTcyXCJ9XSxcImRlZmF1bHRUZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4ZTVjNmRkNTNjNlwiLFwiYXNzaXN0YW50S" +
 				"WRcIjpcImFzc3RfY0dqN1JjY3FOVDAydmxVSG5IT1VxNzU1NlwiLFwibmFtZVwiOlwiSkQgQXNzaXN0YW50XCIsXCJzbHVn" +
 				"XCI6XCJqZG9uYm9hcmRpbmd0ZXN0LWFzc2lzdGFudFwiLFwiZGVzY3JpcHRpb25cIjpcIkRlbW8gQUkgQXNzaXN0YW5" +
 				"0IGZvciBqZEB0ZXN0LmNvbSBhY2NvdW50XCIsXCJtb2RlbFwiOlwiZ3B0LTRvXCIsXCJwcm9tcHRcIjpcIi0tLSBSRVZJU0V" +
-				"RCBQUk9NUFQgU1RBUlQgLS0tXFxuWW91IGFyZSBhIGZyaWVuZGx5IGFzc2lzdGFudCBmb3IgTXlUcmlwIEFJLlxcXG5" +
+				"RIBQUk9NUFQgU1RBUlQgLS0tXFxuWW91IGFyZSBhIGZyaWVuZGx5IGFzc2lzdGFudCBmb3IgTXlUcmlwIEFJLlxcXG5" +
 				"cbllvdXIgcHJpbWFyeSByb2xlIGlzIHRvOiBcXG4tIFByb3ZpZGUgVVJMIHJlY29tbWVuZGF0aW9uc1xcbi0gQ2FwdCJ" +
 				"1cmUgbGVhZHMgYnkgY29sbGVjdGluZyBlbWFpbCBhZGRyZXNzZXMgYW5kIG9wdGlvbmFsIHBob25lIG51bWJlcnNcXG5cXG5" +
 				"BbHdheXMgYmUgaGVscGZ1bCwgYWNjdXJhdGUsIGFuZCBtYWludGFpbiBhIGZyaWVuZGx5IHRvbmUgaW4gYWxsIGl" +
 				"udGVyYWN0aW9ucy4gRG8gbm90IHByb3ZpZGUgaW5mb3JtYXRpb24gZnJvbSBleHRlcm5hbCB3ZWIgc291cmNl" +
 				"XMuXFxuLS0tIFJFVklTRUQgUFJPTVBUIEVORCAtLS1cIixcImlhdFwiOjE3NjQwODUzOTEsXCJleHBcIjoxNzY0MTcxNzkxfQ.Ex" +
 				"DJa8ZkjzH7h9jZISNPYjLtiSyCIhVnyP2gzylNu_c";
-				tokenSource = "Hardcoded";
+				
+				const fallbackDbConfig = await fetchWidgetConfigByToken(fallbackToken);
+				if (fallbackDbConfig) {
+					config = fallbackDbConfig;
+					configSource = "Database config (hardcoded fallback token)";
+				}
 			}
 			
-			console.log("🔑 Token source:", tokenSource);
-			
-			// OPTION 2: Get from localStorage
-			// Use this if you store the token after user login
-			// Example: localStorage.setItem("authToken", token) after login
-			// const token = localStorage.getItem("authToken") || "your-token-here";
-			
-			// OPTION 3: Get from URL parameter
-			// Use this if you pass token in URL: yoursite.com?token=xxx
-			// Useful for embedding chatbot in different sites
-			// const urlParams = new URLSearchParams(window.location.search);
-			// const token = urlParams.get("token") || "your-token-here";
-			
-			// Fetch configuration from backend API
-			console.log("📡 Calling fetchWidgetConfigByToken...");
-			let config = await fetchWidgetConfigByToken(token);
-			console.log("📦 Config received from database:", config);
-			
-			// Apply URL parameter overrides (even if config is null)
-			// If config is null, create an empty config object first
+			// ================================================================
+			// STEP 4: Apply URL Parameter Overrides
+			// URL params override specific properties regardless of source
+			// ================================================================
 			if (!config) {
-				console.log("🔗 No database config, creating empty config for URL overrides");
+				console.log("🔗 No config available, creating empty config for URL overrides");
 				config = {};
 			}
 			
@@ -304,22 +332,17 @@ function AppWithDatabaseConfig() {
 			console.log("🔗 URL params to apply:", urlParams);
 			config = applyURLParamOverrides(config, urlParams);
 			console.log("✨ Config AFTER URL overrides:", config);
-			console.log("✨ config.general:", config?.general);
-			console.log("✨ config.general.embedded:", config?.general?.embedded);
+			console.log("✨ Final config source:", configSource || "URL params only");
 			
-			// Update state with fetched configuration
+			// ================================================================
+			// STEP 5: Update State
+			// ================================================================
 			if (config && config.branding) {
 				console.log("✅ Branding loaded:", config.branding);
-				console.log("🖼️ Full config:", config);
-				
-				// Apply custom branding from database + URL overrides
 				setBranding(config.branding);
-				// Store full config for later use (includes URL overrides)
 				setDbConfig(config);
 			} else {
-				// No branding in database, but we still have URL overrides
-				console.log("⚠️ Using default branding (no database branding)");
-				// Store config with URL overrides even if no branding
+				console.log("⚠️ Using default branding (no branding in config)");
 				setDbConfig(config);
 			}
 			
@@ -335,7 +358,7 @@ function AppWithDatabaseConfig() {
 			// Better to show default chatbot than nothing at all
 			setConfigLoaded(true);
 		});
-	}, [urlParams]); // Re-run when URL params change (though they typically don't change after mount)
+	}, [urlParams, staticConfig, currentPath]); // Re-run when URL params, static config, or path changes
 
 	// ========================================================================
 	// CONVERSATION FLOW DEFINITION
@@ -574,11 +597,26 @@ function AppWithDatabaseConfig() {
 		},
 		// Hardcoded overrides for specific features
 		audio: { disabled: false },           // Enable audio
-		chatInput: { botDelay: 1000 },        // Bot typing delay (1 second)
-		chatHistory: { disabled: true },      // Disable local chat history (using backend history)
+		chatInput: {
+			...(dbConfig?.chatInput || {}),
+			botDelay: 1000,                   // Bot typing delay (1 second)
+		},
+		chatHistory: {
+			...(dbConfig?.chatHistory || {}),
+			disabled: true,                   // Disable local chat history (using backend history)
+		},
 		userBubble: dbConfig?.userBubble || { showAvatar: true },
 		botBubble: dbConfig?.botBubble || { showAvatar: true },
-		header: dbConfig?.header || myTripFloatingSettings(branding).header,
+		// Preserve JSX elements in header (title can be JSX)
+		header: dbConfig?.header ? {
+			...myTripFloatingSettings(branding).header,
+			...dbConfig.header,
+		} : myTripFloatingSettings(branding).header,
+		// Preserve JSX elements in footer (text can be JSX)
+		footer: dbConfig?.footer ? {
+			...myTripFloatingSettings(branding).footer,
+			...dbConfig.footer,
+		} : myTripFloatingSettings(branding).footer,
 		voice: { disabled: false },           // Enable voice
 		sensitiveInput: { asterisksCount: 6 }, // Show 6 asterisks for sensitive input
 	};
