@@ -18,6 +18,7 @@ import { mapApiToConfig, applyURLParamOverrides } from "./utils/apiMapper"; // M
 
 // Custom hooks
 import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
+import { useSessionManager } from "./hooks/useSessionManager"; // Session ID management
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
@@ -189,6 +190,9 @@ function AppWithDatabaseConfig() {
 
 	// Extract URL parameters for configuration overrides
 	const urlParams = useURLParams();
+	
+	// Get or create session ID for tracking user sessions
+	const sessionId = useSessionManager();
 
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
@@ -346,26 +350,37 @@ function AppWithDatabaseConfig() {
 	// ========================================================================
 	/**
 	 * Makes a POST request to the Amalia API with user input
-	 * @param userInput - The user's input text to send to the API
+	 * @param params - Parameters object containing userInput and injectMessage function
 	 * @returns The response from the API
 	 */
 	const callAmaliaAPI = async (params) => {
 		try {
 			console.log("🚀 Calling Amalia API with input:", params.userInput);
 			
+			// Get current path for context-aware tracking
+			const currentPath = window.location.pathname || '/';
+			
+			// Construct client_id with sessionId and path
+			const clientIdWithPath = `${sessionId || 'unknown_user_chatbotify'}-${currentPath}`;
+			
+			console.log("🔑 Using client_id:", clientIdWithPath);
+			
 			const response = await fetch("https://chats.mytrip.ai/amalia-assistant/chat", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ userInput: params.userInput })
+				body: JSON.stringify({ 
+					message: params.userInput,
+					client_id: clientIdWithPath,
+				})
 			});
 			
 			const data = await response.json();
 			console.log("✅ API Response:", data.response);
 			await params.injectMessage(data.response);
-			await params.injectMessage("This is a test");
-			await params.injectMessage("This is a test", "user");
+			// await params.injectMessage("This is a test");
+			// await params.injectMessage("This is a test", "user");
 			return data.response;
 		} catch (error) {
 			console.error("❌ API Error:", error);
