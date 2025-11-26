@@ -3,7 +3,7 @@
 // ============================================================================
 
 // React hooks for state management and side effects
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Main chatbot component that renders the chat interface
 import ChatBot from "./components/ChatBot";
@@ -19,6 +19,9 @@ import { mapApiToConfig, applyURLParamOverrides } from "./utils/apiMapper"; // M
 // Custom hooks
 import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
 import { useSessionManager } from "./hooks/useSessionManager"; // Session ID management
+
+// Chat service functions
+import { getChatHistory, callAmaliaAPI } from "./services/chatService";
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
@@ -187,6 +190,12 @@ function AppWithDatabaseConfig() {
 	
 	// Loading flag - prevents rendering until config is fetched
 	const [configLoaded, setConfigLoaded] = useState(false);
+	
+	// Error state for flow management
+	const [hasError, setHasError] = useState(false);
+	
+	// Ref to track if initial messages have been injected
+	const hasInjectedInitialMessages = useRef(false);
 
 	// Extract URL parameters for configuration overrides
 	const urlParams = useURLParams();
@@ -346,60 +355,79 @@ function AppWithDatabaseConfig() {
 	 */
 	
 	// ========================================================================
-	// API CALL FUNCTION
+	// HELPER FUNCTIONS
 	// ========================================================================
+	
 	/**
-	 * Makes a POST request to the Amalia API with user input
-	 * @param params - Parameters object containing userInput and injectMessage function
-	 * @returns The response from the API
+	 * Gets the current URL path
+	 * @returns Current path string
 	 */
-	const callAmaliaAPI = async (params) => {
-		try {
-			console.log("🚀 Calling Amalia API with input:", params.userInput);
-			
-			// Get current path for context-aware tracking
-			const currentPath = window.location.pathname || '/';
-			
-			// Construct client_id with sessionId and path
-			const clientIdWithPath = `${sessionId || 'unknown_user_chatbotify'}-${currentPath}`;
-			
-			console.log("🔑 Using client_id:", clientIdWithPath);
-			
-			const response = await fetch("https://chats.mytrip.ai/amalia-assistant/chat", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ 
-					message: params.userInput,
-					client_id: clientIdWithPath,
-				})
-			});
-			
-			const data = await response.json();
-			console.log("✅ API Response:", data.response);
-			await params.injectMessage(data.response);
-			// await params.injectMessage("This is a test");
-			// await params.injectMessage("This is a test", "user");
-			return data.response;
-		} catch (error) {
-			console.error("❌ API Error:", error);
-			return null;
-		}
+	const getCurrentPath = (): string => {
+		return window.location.pathname || '/';
+	};
+	
+	/**
+	 * Gets the onboarding thread ID (if any)
+	 * @returns Thread ID or null
+	 */
+	const getOnboardingThreadID = (): string | null => {
+		// This can be extracted from URL params or other sources if needed
+		return null;
 	};
 	
 	const flow: Flow = {
-		// First block - always named "start"
-		// Bot asks for user's name
+		// ====================================================================
+		// START BLOCK - Fetches chat history on initial load
+		// ====================================================================
 		start: {
-			message: "Hello! What is your name?",
-			path: "model_loop", // Go to show_name block after user responds
-		},
-		model_loop: {
-			message: async (params) => {
-				return await callAmaliaAPI(params);
+			message: async (params: Params) => {
+				console.log('🎬 [Flow] Entering start block - fetching chat history...');
+				
+				// Fetch and inject chat history
+				await getChatHistory(
+					params,
+					getCurrentPath(),
+					getOnboardingThreadID(),
+					sessionId,
+					hasInjectedInitialMessages
+				);
+				
+				console.log('✅ [Flow] Chat history loaded, transitioning to loop...');
 			},
-			path: "model_loop"
+			path: () => {
+				// Reset error state and move to conversation loop
+				setHasError(false);
+				return "loop";
+			},
+		},
+		
+		// ====================================================================
+		// LOOP BLOCK - Handles ongoing conversation
+		// ====================================================================
+		loop: {
+			message: async (params: Params) => {
+				console.log('🔄 [Flow] In loop block - processing user message...');
+				
+				// Call API with user's message
+				const success = await callAmaliaAPI(
+					params,
+					sessionId,
+					getCurrentPath()
+				);
+				
+				// Update error state based on API response
+				setHasError(!success);
+			},
+			path: () => {
+				// If error occurred, retry from start
+				if (hasError) {
+					console.log('⚠️ [Flow] Error detected, returning to start...');
+					return "start";
+				}
+				// Otherwise, stay in loop for continued conversation
+				console.log('✅ [Flow] Staying in loop...');
+				return "loop";
+			}
 		},
 
 		// Second block - greets user by name
@@ -467,7 +495,7 @@ function AppWithDatabaseConfig() {
 		},
 		// Loop block - keeps conversation alive
 		// Useful for showing final message or keeping chat open
-		loop: {
+		old_loop: {
 			message: (params: Params) => {
 				// Inject a message after 500ms delay
 				// injectMessage() adds a bot message programmatically
@@ -542,11 +570,12 @@ function AppWithDatabaseConfig() {
 		general: {
 			...myTripFloatingSettings(branding).general,
 			...(dbConfig?.general || {}),     // Includes embedded from URL params
+			flowStartTrigger: 'ON_LOAD',      // Start flow immediately when component mounts
 		},
 		// Hardcoded overrides for specific features
 		audio: { disabled: false },           // Enable audio
 		chatInput: { botDelay: 1000 },        // Bot typing delay (1 second)
-		chatHistory: { disabled: true },      // Auto-load chat history
+		chatHistory: { disabled: true },      // Disable local chat history (using backend history)
 		userBubble: dbConfig?.userBubble || { showAvatar: true },
 		botBubble: dbConfig?.botBubble || { showAvatar: true },
 		header: dbConfig?.header || myTripFloatingSettings(branding).header,
