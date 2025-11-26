@@ -30,7 +30,7 @@ const ChatBotHeader = ({ buttons }: { buttons: JSX.Element[] }) => {
 		fontSize: "1.6rem",
 		fontWeight: 300,
 		fontFamily: "Playfair Display, 'Cormorant Garamond', serif",
-		color: "var(--color-accent-teal)",
+		color: settings.general?.primaryColor || "var(--color-accent-teal)",
 		textAlign: "center"
 	};
 

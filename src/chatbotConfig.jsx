@@ -1650,7 +1650,7 @@ const chatbotConfig = {
                 flowStartTrigger: 'ON_LOAD'		// ON_LOAD || ON_CHATBOT_INTERACT || ON_PAGE_INTERACT
             },
             header: {
-                title: "Your AI TravelPlanner",
+                title: "Your AI Travel Planner",
                 showAvatar: true,
                 avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvkygolUe2pTAKYs55ev49eHhONJMbC0uQ3A&s',
                 buttons: [Button.CLOSE_CHAT_BUTTON]
