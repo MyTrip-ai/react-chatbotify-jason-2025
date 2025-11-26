@@ -49,6 +49,7 @@ export const callAmaliaAPI = async (
 ): Promise<boolean> => {
 	console.log('🚀 [callAmaliaAPI] Starting API call...');
 	console.log('🚀 [callAmaliaAPI] User input:', params.userInput);
+	console.log('🔗 [callAmaliaAPI] onboardingThreadID:', params.onboardingThreadID);
 
 	const effectivePath = getEffectivePath(currentPath);
 	const url = getChatApiUrl(effectivePath);
@@ -139,6 +140,7 @@ export const getChatHistory = async (
 	console.log('📜 [getChatHistory] Starting to fetch chat history...');
 	console.log('📜 [getChatHistory] Current path:', currentPath);
 	console.log('📜 [getChatHistory] Session ID:', sessionId);
+	console.log('🔗 [getChatHistory] onboardingThreadID:', onboardingThreadID);
 	console.log('📜 [getChatHistory] Has injected:', hasInjectedRef.current);
 
 	// Prevent duplicate injection

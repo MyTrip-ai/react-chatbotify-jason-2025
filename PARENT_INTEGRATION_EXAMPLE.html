@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding Thread ID - Parent Integration Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .chatbot-container {
+            margin-top: 30px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 600px;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Onboarding Thread ID Integration</h1>
+        <p class="subtitle">Example parent application demonstrating thread ID messaging to chatbot widget</p>
+        
+        <div class="section">
+            <h2>📋 Instructions</h2>
+            <ol>
+                <li>Click <strong>"Generate New Thread ID"</strong> to create a unique thread identifier</li>
+                <li>Click <strong>"Send Thread ID to Chatbot"</strong> to send it to the widget via postMessage</li>
+                <li>Start chatting - your conversation will be associated with this thread ID</li>
+                <li>Navigate to another page or refresh, then send the same thread ID to continue the conversation</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>🎮 Controls</h2>
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="threadIdInput" placeholder="Thread ID will appear here" readonly>
+                <button onclick="generateThreadId()">Generate New Thread ID</button>
+            </div>
+            <div>
+                <button onclick="sendThreadIdToChatbot()" id="sendBtn" disabled>Send Thread ID to Chatbot</button>
+                <button onclick="clearThreadId()">Clear Thread ID</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="section">
+            <h2>💬 Chatbot Widget</h2>
+            <p>The chatbot widget will appear below. Replace the iframe src with your actual chatbot URL.</p>
+            <div class="chatbot-container">
+                <!-- Replace this URL with your actual chatbot widget URL -->
+                <iframe 
+                    id="chatbotIframe"
+                    src="http://localhost:5173"
+                    title="Chatbot Widget"
+                ></iframe>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📝 How It Works</h2>
+            <p>This example demonstrates the <code>postMessage</code> API to send the thread ID to the chatbot:</p>
+            <pre style="background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto;"><code>iframe.contentWindow.postMessage({
+    type: 'thread_id',
+    value: 'thread_1234567890_abc123'
+}, '*');</code></pre>
+            <p>The chatbot's <code>useParentMessaging</code> hook listens for this message and uses the thread ID in API calls.</p>
+        </div>
+    </div>
+
+    <script>
+        let currentThreadId = null;
+
+        /**
+         * Generates a unique thread ID
+         */
+        function generateThreadId() {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 15);
+            currentThreadId = `thread_${timestamp}_${random}`;
+            
+            document.getElementById('threadIdInput').value = currentThreadId;
+            document.getElementById('sendBtn').disabled = false;
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('onboarding_thread_id', currentThreadId);
+            
+            showStatus('success', `✅ Thread ID generated: ${currentThreadId}`);
+            console.log('Generated thread ID:', currentThreadId);
+        }
+
+        /**
+         * Sends thread ID to chatbot via postMessage
+         */
+        function sendThreadIdToChatbot() {
+            if (!currentThreadId) {
+                showStatus('warning', '⚠️ Please generate a thread ID first');
+                return;
+            }
+
+            const iframe = document.getElementById('chatbotIframe');
+            
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    type: 'thread_id',
+                    value: currentThreadId
+                }, '*');
+                
+                showStatus('success', `✅ Thread ID sent to chatbot: ${currentThreadId}`);
+                console.log('Sent thread ID to chatbot:', currentThreadId);
+            } else {
+                showStatus('warning', '⚠️ Chatbot iframe not found or not ready');
+                console.error('Chatbot iframe not available');
+            }
+        }
+
+        /**
+         * Clears the current thread ID
+         */
+        function clearThreadId() {
+            currentThreadId = null;
+            document.getElementById('threadIdInput').value = '';
+            document.getElementById('sendBtn').disabled = true;
+            localStorage.removeItem('onboarding_thread_id');
+            
+            showStatus('info', 'ℹ️ Thread ID cleared');
+            console.log('Thread ID cleared');
+        }
+
+        /**
+         * Shows status message
+         */
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        /**
+         * Check for existing thread ID on page load
+         */
+        window.addEventListener('load', () => {
+            const savedThreadId = localStorage.getItem('onboarding_thread_id');
+            
+            if (savedThreadId) {
+                currentThreadId = savedThreadId;
+                document.getElementById('threadIdInput').value = savedThreadId;
+                document.getElementById('sendBtn').disabled = false;
+                
+                showStatus('info', `ℹ️ Restored thread ID from localStorage: ${savedThreadId}`);
+                
+                // Automatically send thread ID after iframe loads
+                setTimeout(() => {
+                    sendThreadIdToChatbot();
+                }, 1500);
+            } else {
+                showStatus('info', 'ℹ️ No existing thread ID. Click "Generate New Thread ID" to start.');
+            }
+        });
+
+        /**
+         * Listen for messages from chatbot (optional - for debugging)
+         */
+        window.addEventListener('message', (event) => {
+            // Only log messages from the chatbot iframe
+            if (event.source === document.getElementById('chatbotIframe').contentWindow) {
+                console.log('Message received from chatbot:', event.data);
+            }
+        });
+    </script>
+</body>
+</html>

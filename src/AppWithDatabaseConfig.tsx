@@ -21,6 +21,7 @@ import { mapStaticConfigToAppConfig } from "./utils/staticConfigMapper"; // Maps
 import { useURLParams } from "./hooks/useURLParams"; // Extract URL parameters
 import { useSessionManager } from "./hooks/useSessionManager"; // Session ID management
 import { useStaticConfig, useCurrentPath } from "./hooks/useStaticConfig"; // Static configuration
+import { useParentMessaging } from "./hooks/useParentMessaging"; // Parent window messaging
 
 // Chat service functions
 import { getChatHistory, callAmaliaAPI } from "./services/chatService";
@@ -210,6 +211,9 @@ function AppWithDatabaseConfig() {
 	
 	// Get current URL path
 	const currentPath = useCurrentPath();
+	
+	// Get onboarding thread ID from parent window
+	const { onboardingThreadID } = useParentMessaging();
 
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
@@ -389,15 +393,6 @@ function AppWithDatabaseConfig() {
 		return window.location.pathname || '/';
 	};
 	
-	/**
-	 * Gets the onboarding thread ID (if any)
-	 * @returns Thread ID or null
-	 */
-	const getOnboardingThreadID = (): string | null => {
-		// This can be extracted from URL params or other sources if needed
-		return null;
-	};
-	
 	const flow: Flow = {
 		// ====================================================================
 		// START BLOCK - Fetches chat history on initial load
@@ -410,7 +405,7 @@ function AppWithDatabaseConfig() {
 				await getChatHistory(
 					params,
 					getCurrentPath(),
-					getOnboardingThreadID(),
+					onboardingThreadID || null,
 					sessionId,
 					hasInjectedInitialMessages
 				);
