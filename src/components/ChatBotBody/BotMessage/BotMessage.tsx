@@ -24,8 +24,6 @@ const BotMessage = ({
 	// handles styles
 	const { styles } = useStylesContext();
 
-	// checks if content should be rendered as html
-	const isStringContent = typeof message.content === "string";
 	const baseContent: React.ReactNode = message.content;
 
 	// checks if content wrapper is defined to wrap around content
@@ -73,15 +71,9 @@ const BotMessage = ({
 					className="rcb-message-bot-avatar"
 				/>
 			)}
-			{ isStringContent ? (
-				<div style={botBubbleStyle} className={`${offsetStyle} ${botBubbleEntryStyle}`}>
-					{finalContent}
-				</div>
-			) : (
-				<>
-					{finalContent}
-				</>
-			)}
+			<div style={botBubbleStyle} className={`${offsetStyle} ${botBubbleEntryStyle}`}>
+				{finalContent}
+			</div>
 		</div>
 	);
 };

@@ -401,13 +401,17 @@ function AppWithDatabaseConfig() {
 			message: async (params: Params) => {
 				console.log('🎬 [Flow] Entering start block - fetching chat history...');
 				
+				// Check if HTML parsing is enabled
+				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;
+				
 				// Fetch and inject chat history
 				await getChatHistory(
 					params,
 					getCurrentPath(),
 					onboardingThreadID || null,
 					sessionId,
-					hasInjectedInitialMessages
+					hasInjectedInitialMessages,
+					enableHTMLParsing
 				);
 				
 				console.log('✅ [Flow] Chat history loaded, transitioning to loop...');
@@ -426,11 +430,15 @@ function AppWithDatabaseConfig() {
 			message: async (params: Params) => {
 				console.log('🔄 [Flow] In loop block - processing user message...');
 				
+				// Check if HTML parsing is enabled
+				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;
+				
 				// Call API with user's message
 				const success = await callAmaliaAPI(
 					params,
 					sessionId,
-					getCurrentPath()
+					getCurrentPath(),
+					enableHTMLParsing
 				);
 				
 				// Update error state based on API response

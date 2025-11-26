@@ -5,6 +5,7 @@
 
 import { API_ENDPOINTS, SPECIAL_PATHS, DEFAULT_PATH, GREETING_MESSAGE } from '../config/constants';
 import { Params } from '../types/Params';
+import { parseHTMLToReact, containsHTML } from '../utils/htmlParser';
 
 /**
  * Determines the effective path for API calls
@@ -40,12 +41,14 @@ const getChatApiUrl = (effectivePath: string): string => {
  * @param params - Parameters object from react-chatbotify
  * @param sessionId - Session ID for tracking user sessions
  * @param currentPath - Current URL path
+ * @param enableHTMLParsing - Whether to parse HTML in messages (default: false)
  * @returns Success status
  */
 export const callAmaliaAPI = async (
 	params: Params,
 	sessionId: string,
-	currentPath: string
+	currentPath: string,
+	enableHTMLParsing: boolean = false
 ): Promise<boolean> => {
 	console.log('🚀 [callAmaliaAPI] Starting API call...');
 	console.log('🚀 [callAmaliaAPI] User input:', params.userInput);
@@ -92,12 +95,17 @@ export const callAmaliaAPI = async (
 					const { message, role } = messageObj;
 					console.log(`💬 Injecting message - Role: ${role}, Message: ${message.substring(0, 50)}...`);
 					
+					// Parse HTML if enabled and message contains HTML tags
+					const messageContent = (enableHTMLParsing && typeof message === 'string' && containsHTML(message))
+						? parseHTMLToReact(message)
+						: message;
+					
 					switch (role) {
 					case "user":
-						await params.injectMessage(message, "user");
+						await params.injectMessage(messageContent, "user");
 						break;
 					case "assistant":
-						await params.injectMessage(message);
+						await params.injectMessage(messageContent);
 						break;
 					default:
 						console.warn(`⚠️ [callAmaliaAPI] Unexpected role ${role}`, messageObj);
@@ -106,7 +114,14 @@ export const callAmaliaAPI = async (
 			} else {
 				// Handle single message (string)
 				console.log('💬 [callAmaliaAPI] Processing single message...');
-				await params.injectMessage(data.response);
+				
+				// Parse HTML if enabled and message contains HTML tags
+				const messageContent = (enableHTMLParsing && typeof data.response === 'string' 
+					&& containsHTML(data.response))
+					? parseHTMLToReact(data.response)
+					: data.response;
+				
+				await params.injectMessage(messageContent);
 			}
 			console.log('✅ [callAmaliaAPI] API call completed successfully');
 			return true;
@@ -128,6 +143,7 @@ export const callAmaliaAPI = async (
  * @param onboardingThreadID - Thread ID for onboarding
  * @param sessionId - Session ID for tracking user sessions
  * @param hasInjectedRef - Ref to track if initial messages were injected
+ * @param enableHTMLParsing - Whether to parse HTML in messages (default: false)
  * @returns Promise<void>
  */
 export const getChatHistory = async (
@@ -135,7 +151,8 @@ export const getChatHistory = async (
 	currentPath: string,
 	onboardingThreadID: string | null,
 	sessionId: string,
-	hasInjectedRef: React.MutableRefObject<boolean>
+	hasInjectedRef: React.MutableRefObject<boolean>,
+	enableHTMLParsing: boolean = false
 ): Promise<void> => {
 	console.log('📜 [getChatHistory] Starting to fetch chat history...');
 	console.log('📜 [getChatHistory] Current path:', currentPath);
@@ -164,7 +181,7 @@ export const getChatHistory = async (
 		params.onboardingThreadID = onboardingThreadID;
 		
 		// Call API to get history
-		await callAmaliaAPI(params, sessionId, currentPath);
+		await callAmaliaAPI(params, sessionId, currentPath, enableHTMLParsing);
 		
 		// Mark as injected
 		hasInjectedRef.current = true;

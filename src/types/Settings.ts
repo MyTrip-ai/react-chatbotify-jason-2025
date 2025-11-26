@@ -101,6 +101,7 @@ export type Settings = {
 		avatar?: string;
 		simulateStream?: boolean;
 		streamSpeed? :number;
+		dangerouslySetInnerHtml?: boolean;
 	},
 	voice?: {
 		disabled?: boolean;
