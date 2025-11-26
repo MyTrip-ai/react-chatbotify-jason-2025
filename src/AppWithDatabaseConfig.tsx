@@ -340,13 +340,53 @@ function AppWithDatabaseConfig() {
 	 * - isSensitive: Whether to hide user input (for passwords, etc.)
 	 * - transition: Animation settings
 	 */
+	
+	// ========================================================================
+	// API CALL FUNCTION
+	// ========================================================================
+	/**
+	 * Makes a POST request to the Amalia API with user input
+	 * @param userInput - The user's input text to send to the API
+	 * @returns The response from the API
+	 */
+	const callAmaliaAPI = async (params) => {
+		try {
+			console.log("🚀 Calling Amalia API with input:", params.userInput);
+			
+			const response = await fetch("https://chats.mytrip.ai/amalia-assistant/chat", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ userInput: params.userInput })
+			});
+			
+			const data = await response.json();
+			console.log("✅ API Response:", data.response);
+			await params.injectMessage(data.response);
+			await params.injectMessage("This is a test");
+			await params.injectMessage("This is a test", "user");
+			return data.response;
+		} catch (error) {
+			console.error("❌ API Error:", error);
+			return null;
+		}
+	};
+	
 	const flow: Flow = {
 		// First block - always named "start"
 		// Bot asks for user's name
 		start: {
 			message: "Hello! What is your name?",
-			path: "show_name", // Go to show_name block after user responds
+			path: "model_loop", // Go to show_name block after user responds
 		},
+		model_loop: {
+			message: async (params) => {
+				return await callAmaliaAPI(params);
+			},
+			path: "model_loop"
+		},
+
 		// Second block - greets user by name
 		show_name: {
 			// Dynamic message using user's input from previous block

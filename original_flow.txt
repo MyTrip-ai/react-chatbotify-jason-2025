@@ -1,0 +1,94 @@
+const flow: Flow = {
+		// First block - always named "start"
+		// Bot asks for user's name
+		start: {
+			message: "Hello! What is your name?",
+			path: "show_name", // Go to show_name block after user responds
+		},
+		// Second block - greets user by name
+		show_name: {
+			// Dynamic message using user's input from previous block
+			message: (params: Params) => `Hey ${params.userInput}! Nice to meet you.`,
+			// Save user's name to state for later use
+			function: (params: Params) => setName(params.userInput),
+			// Disable chat input (bot is "thinking")
+			chatDisabled: true,
+			// Wait 1 second before moving to next block
+			transition: { duration: 1000 },
+			path: "ask_token",
+		},
+		// Third block - asks for 6-digit profile ID
+		ask_token: {
+			message: () => "Before we proceed, we need to verify your profile id, " +
+				"Enter your 6 digit profile id",
+			// isSensitive = true hides user input with asterisks (like password field)
+			isSensitive: true,
+			// Dynamic path based on validation
+			path: (params: Params) => {
+				// Validate input length
+				if (params.userInput.length !== 6) {
+					return "incorrect_answer"; // Show error
+				} else {
+					return "ask_age_group"; // Continue to next step
+				}
+			},
+		},
+		// Fourth block - asks for age group with button options
+		ask_age_group: {
+			// Uses the 'name' variable from state (saved earlier)
+			message: () => `Hey ${name}!, Your account got verified, May i know your age group?`,
+			// Show buttons instead of text input
+			options: ["child", "teen", "adult"],
+			// Disable text input (user must click a button)
+			chatDisabled: true,
+			path: () => "ask_math_question",
+		},
+		// Fifth block - asks math question
+		ask_math_question: {
+			message: (params: Params) => {
+				// Don't show message if coming from error block
+				// (error block already shows the question)
+				if (params.prevPath == "incorrect_answer") {
+					return;
+				}
+				// Show question with user's age group
+				return `I see you're a ${params.userInput}. Let's do a quick test! What is 1 + 1?`;
+			},
+			// Validate answer
+			path: (params: Params) => {
+				if (params.userInput != "2") {
+					return "incorrect_answer"; // Wrong answer
+				} else {
+					return "end"; // Correct! Go to end
+				}
+			},
+		},
+		// Success block - conversation completed
+		end: {
+			message: "Great job! Thank you for chatting with me!",
+			path: "loop" // Go to loop block
+		},
+		// Loop block - keeps conversation alive
+		// Useful for showing final message or keeping chat open
+		loop: {
+			message: (params: Params) => {
+				// Inject a message after 500ms delay
+				// injectMessage() adds a bot message programmatically
+				setTimeout(async () => {
+					await params.injectMessage("You have reached the end of the conversation!");
+				}, 500);
+			},
+			// Loop back to itself (conversation stays here)
+			path: "loop"
+		},
+		// Error block - handles incorrect answers
+		// This is a reusable error handler used by multiple blocks
+		incorrect_answer: {
+			message: "Your answer is incorrect, try again!",
+			// No transition delay (show error immediately)
+			transition: { duration: 0 },
+			// Go back to the previous block to retry
+			// params.prevPath contains the name of the block we came from
+			path: (params: Params) => params.prevPath
+		},
+	};
