@@ -546,6 +546,7 @@ function AppWithDatabaseConfig() {
 		// Hardcoded overrides for specific features
 		audio: { disabled: false },           // Enable audio
 		chatInput: { botDelay: 1000 },        // Bot typing delay (1 second)
+		chatHistory: { disabled: true },      // Auto-load chat history
 		userBubble: dbConfig?.userBubble || { showAvatar: true },
 		botBubble: dbConfig?.botBubble || { showAvatar: true },
 		header: dbConfig?.header || myTripFloatingSettings(branding).header,
