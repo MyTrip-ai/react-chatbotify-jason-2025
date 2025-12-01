@@ -46,6 +46,7 @@
 	width: 420px;
 	height: 580px;
 	padding: 16px 24px;
+	box-sizing: border-box;
 }
 
 .rcb-window-embedded .rcb-chat-window {
@@ -58,6 +59,7 @@
 	height: 100% !important;
 	min-height: 400px; /* Ensure minimum usable height */
 	flex: 1; /* Allow it to grow and fill available space */
+	box-sizing: border-box; /* Include padding and border in width calculation */
 }
 
 .rcb-window-open .rcb-chat-window {
