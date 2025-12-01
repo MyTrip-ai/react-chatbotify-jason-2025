@@ -29,6 +29,7 @@
   "scripts": {
     "lint": "eslint --fix \"**/*.{ts,tsx}\"",
     "build": "tsc && vite build && node ./scripts/post-build.js",
+    "build:app": "vite build --config vite.config.app.js",
     "prepublishOnly": "tsc && vite build && node ./scripts/post-build.js",
     "prepack": "tsc && vite build && node ./scripts/post-build.js",
     "start": "vite serve",

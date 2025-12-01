@@ -40,7 +40,8 @@ import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } fr
  */
 const API_ENDPOINTS = {
 	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001",
-	TOKEN_SERVICE: "http://localhost:3000"
+	// TOKEN_SERVICE: "http://localhost:3000"
+	TOKEN_SERVICE: "https://stagingplatform.mytrip.ai"
 };
 
 // ============================================================================

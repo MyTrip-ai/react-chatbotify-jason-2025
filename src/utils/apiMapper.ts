@@ -46,6 +46,7 @@ export const mapApiToConfig = (apiData: any) => {
 		botBubble: {
 			avatar: chatDesign?.botAvatar,
 			showAvatar: !!chatDesign?.botAvatar,
+			dangerouslySetInnerHtml: true, // Always enable HTML rendering for bot messages
 		},
 		userBubble: {
 			showAvatar: false, // Can be configured if needed
