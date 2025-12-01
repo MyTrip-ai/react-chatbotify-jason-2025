@@ -10,10 +10,12 @@
 export const API_ENDPOINTS = {
 	// Main chat API base URL
 	CHAT_BASE: "https://chats.mytrip.ai",
+	// CHAT_BASE: "http://localhost:8001",
 	// Express middleware endpoint (if needed)
 	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001",
 	// Token service endpoint (if needed)
-	TOKEN_SERVICE: "http://localhost:3000"
+	// TOKEN_SERVICE: "http://localhost:3000"
+	TOKEN_SERVICE: "https://stagingplatform.mytrip.ai"
 };
 
 /**

@@ -2193,6 +2193,92 @@ const chatbotConfig = {
             },
         }
     },
+    jdtravelcare: {
+        message: "Hello! I'm Heidi, your AI Trip Planner. How can I assist you in planning your next adventure? Are you interested in exploring the Southern French Alsp?",
+        settings: {
+            botBubble: {
+                showAvatar: true,
+                avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEGBr-WOzZCw2mlL1JNMO7qK4GaTORDS39xA&s',
+                simStream: false,
+                streamSpeed: 20,
+                dangerouslySetInnerHtml: true
+            },
+            chatButton: {
+                icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEGBr-WOzZCw2mlL1JNMO7qK4GaTORDS39xA&s'
+            },
+            chatWindow: {
+                showScrollbar:true,
+                autoJumpToBottom:false,
+                showMessagePrompt: true,
+                messagePromptText: "New Messages ↓",
+                defaultOpen:true,
+            },
+            chatHistory: {
+                disabled: true,
+                maxEntries: 100,
+                storageKey: 'rcb-history',
+                storageType: 'LOCAL_STORAGE',
+                viewChatHistoryButtonText: 'See Previous Messages',
+                chatHistoryLineBreakText: '----- Previous Chat History -----',
+                autoLoad: true
+            },
+            chatInput: {
+                disabled: false,
+                allowNewline: true,
+                enabledPlaceholderText: 'Type your message...',
+                showCharacterCount: false,
+                characterLimit: -1,
+                botDelay: 0,
+                blockSpam: true,
+                buttons: [Button.SEND_MESSAGE_BUTTON]
+            },
+            device: {
+                desktopEnabled: true,
+                mobileEnabled: true,
+                applyMobileOptimizations: false
+            },
+            footer: {
+                text: <div style={{ display: 'flex', alignItems: 'center', fontSize: '14px', fontFamily: 'Arial, sans-serif', color: '#666' }}>
+                <img 
+                    src="https://mytrip.ai/wp-content/uploads/2024/02/mytripailogoheadround20x20.png" 
+                    alt="MyTrip.ai logo" 
+                    style={{ width: '20px', height: '20px', marginRight: '8px', borderRadius: '50%' }}
+                />
+                <span>Powered by MyTrip.ai</span>
+                </div>,
+                buttons: []
+            },
+            general: {
+                primaryColor: '#dd4334',
+                secondaryColor: '#dd4334',
+                fontFamily: 'sans-serif',
+                showHeader: true,
+                showFooter: true,
+                embedded: false,
+                flowStartTrigger: 'ON_LOAD'
+            },
+            header: {
+                title: "Travel Care AI Assistant",
+                showAvatar: true,
+                avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEGBr-WOzZCw2mlL1JNMO7qK4GaTORDS39xA&s',
+                buttons: [Button.CLOSE_CHAT_BUTTON]
+
+            },
+            notification: {
+                volume: 1,
+                showCount: true
+            },
+            tooltip:{
+                mode: 'NEVER',
+            },
+            userBubble: {
+                animate: true,
+                showAvatar: true,
+                avatar: 'https://mytrip.ai/wp-content/uploads/2024/02/logoheadtranslucent.png',
+                simStream: false
+            },
+        }
+    },
 };
   
   export default chatbotConfig;

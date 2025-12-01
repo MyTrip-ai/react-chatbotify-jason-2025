@@ -13,9 +13,16 @@ const parseHTMLNodes = (html: string, settings?: Settings, styles?: Styles): Rea
 	const renderNodes: ReactNode[] = nodes.map((node, index) => {
 		if (node.nodeType === Node.TEXT_NODE) {
 			return node.textContent;
-		} else {
-			const tagName = (node as Element).tagName.toLowerCase();
-			let attributes = Array.from((node as Element).attributes).reduce((acc, attr) => {
+		} else if (node.nodeType === Node.ELEMENT_NODE) {
+			const element = node as Element;
+			const tagName = element.tagName?.toLowerCase();
+			
+			if (!tagName) {
+				return null;
+			}
+			
+			let attributes = Array.from(element.attributes).reduce((acc, attr) => {
+				if (!attr.name) return acc;
 				const attributeName = attr.name.toLowerCase();
 				if (attributeName === "style") {
 					const styleProperties = attr.value.split(";").filter(property => property.trim() !== "");
@@ -37,7 +44,7 @@ const parseHTMLNodes = (html: string, settings?: Settings, styles?: Styles): Rea
 
 			// if have class property, rename to className instead
 			if (Object.prototype.hasOwnProperty.call(attributes, "class")) {
-				const classList = (node as Element).classList;
+				const classList = element.classList;
 				attributes["className"] = classList.toString();
 				delete attributes["class"];
 			}
@@ -48,11 +55,14 @@ const parseHTMLNodes = (html: string, settings?: Settings, styles?: Styles): Rea
 				// void elements must not have children
 				return createElement(tagName, { key: index, ...attributes });
 			} else {
-				const children = parseHTMLNodes((node as Element).innerHTML, settings, styles);
+				const children = parseHTMLNodes(element.innerHTML, settings, styles);
 				return createElement(tagName, { key: index, ...attributes }, ...children);
 			}
+		} else {
+			// Skip other node types (comments, etc.)
+			return null;
 		}
-	});
+	}).filter(Boolean);
   
 	return renderNodes;
 };

@@ -266,9 +266,10 @@ function AppWithDatabaseConfig() {
 			// Only try if path looks like an ID (not a static config path)
 			if (!token && !staticConfig && currentPath) {
 				console.log("🌐 Attempting to fetch token from API for ID:", currentPath);
-				token = await fetchTokenByAssistantId(currentPath);
+				const fetchedToken = await fetchTokenByAssistantId(currentPath);
 				
-				if (token) {
+				if (fetchedToken) {
+					token = fetchedToken;
 					tokenSource = "API (from URL path)";
 					console.log("✅ Token fetched successfully from API");
 				} else {

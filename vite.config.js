@@ -34,7 +34,7 @@ export default ({mode}) => {
           intro: 'import "./style.css";',
         },
       },
-      outDir: "../dist",
+      outDir: "../build",
     },
     assetsInclude: ["**/*.svg", "**/*.png", "**/*.wav"],
     plugins: [

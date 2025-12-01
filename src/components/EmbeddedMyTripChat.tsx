@@ -6,8 +6,8 @@ const EmbeddedMyTripChat = ({ flow }: { flow: Flow }) => (
 	<ChatBot
 		id="mytrip-embedded-chatbot"
 		flow={flow}
-		settings={myTripEmbeddedSettings}
-		styles={myTripEmbeddedStyles}
+		settings={myTripEmbeddedSettings()}
+		styles={myTripEmbeddedStyles()}
 		themes={myTripTheme}
 	/>
 );
