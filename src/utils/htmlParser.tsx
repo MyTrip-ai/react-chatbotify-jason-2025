@@ -36,11 +36,28 @@ const parseHTMLNodes = (html: string, settings?: Settings, styles?: Styles): Rea
 				} else if ((tagName === "audio" || tagName === "video")
 					&& attributeName === "controls" && attr.value === "") {
 					acc[attributeName] = "true";
+				} else if (attributeName === "onclick") {
+					// Option A: Convert inline onclick string to React onClick handler
+					// WARNING: This uses Function constructor which can be a security risk with untrusted HTML
+					try {
+						// Create a function from the onclick string
+						// The function receives 'event' as parameter
+						const clickHandler = new Function('event', attr.value);
+						acc["onClick"] = (e: React.MouseEvent) => {
+							try {
+								clickHandler.call(e.currentTarget, e);
+							} catch (error) {
+								console.error('[htmlParser] Error executing onclick handler:', error);
+							}
+						};
+					} catch (error) {
+						console.error('[htmlParser] Error parsing onclick attribute:', error);
+					}
 				} else {
 					acc[attributeName] = attr.value;
 				}
 				return acc;
-			}, {} as { [key: string]: string | CSSProperties });
+			}, {} as { [key: string]: string | CSSProperties | ((e: React.MouseEvent) => void) });
 
 			// if have class property, rename to className instead
 			if (Object.prototype.hasOwnProperty.call(attributes, "class")) {
