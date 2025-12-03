@@ -11,6 +11,7 @@ import { Theme } from "../types/Theme";
 import { Plugin } from "../types/Plugin";
 import { Slots } from "../types/Slots";
 import { WelcomeFlow } from "../constants/internal/WelcomeFlow";
+import { registerGlobalActions } from "../utils/htmlButtonActions";
 
 /**
  * Determines if user gave a provider or if one needs to be created, before rendering the chatbot.
@@ -64,6 +65,11 @@ const ChatBot = ({
 			setFinalThemes(themes);
 		}
 	}, [themes])
+
+	// Register global actions for HTML button onclick handlers
+	useEffect(() => {
+		registerGlobalActions();
+	}, [])
 
 	/**
 	 * Renders chatbot with provider depending on whether one was provided by the user.
