@@ -130,7 +130,8 @@ export const callAmaliaAPI = async (
 		}
 	} catch (error) {
 		console.error('❌ [callAmaliaAPI] Error:', error);
-		await params.injectMessage("Unable to connect to the chat service. Please try again.");
+		// await params.injectMessage("Unable to connect to the chat service. Please try again.");
+		await params.injectMessage("Looks like we're unavailable right now, please try again in a moment.");
 		console.log('❌ [callAmaliaAPI] API call failed');
 		return false;
 	}
