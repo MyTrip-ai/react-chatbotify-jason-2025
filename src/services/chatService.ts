@@ -10,6 +10,15 @@ import { Params } from "../types/Params";
 import { parseHTMLToReact, containsHTML } from "../utils/htmlParser";
 import { handoffService } from "./HandoffService";
 
+// Persist the latest thread ID returned by the server so subsequent
+// /chat requests continue the same thread (required for room alignment).
+let persistedThreadId: string | null = null;
+
+// Detect dev mode for debug info in error messages
+const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === "true" ||
+	import.meta.env.DEV ||
+	window.location.hostname === "localhost";
+
 /**
  * Determines the effective path for API calls
  * @param currentPath - Current URL path
@@ -51,6 +60,8 @@ export const callAmaliaAPI = async (
 	currentPath: string,
 	enableHTMLParsing: boolean = false
 ): Promise<boolean> => {
+	const startTime = performance.now();
+
 	console.log('🚀 [callAmaliaAPI] Starting API call...');
 	console.log('🚀 [callAmaliaAPI] User input:', params.userInput);
 	console.log('🔗 [callAmaliaAPI] onboardingThreadID:', params.onboardingThreadID);
@@ -61,11 +72,24 @@ export const callAmaliaAPI = async (
 
 	console.log('🔑 [callAmaliaAPI] Using client_id:', clientIdWithPath);
 	console.log('📡 [callAmaliaAPI] API URL:', url);
+	const outboundThreadId = params.onboardingThreadID || persistedThreadId || null;
+
+	console.log('📡 [callAmaliaAPI] Request body:', JSON.stringify({
+		message: params.userInput,
+		client_id: clientIdWithPath,
+		tenant_id: TENANT_ID,
+		onboarding_thread_id: params.onboardingThreadID || null,
+		thread_id: outboundThreadId,
+	}, null, 2));
 
 	try {
 		// Make API request with timeout
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+		// 30s timeout (increased due to slow OpenAI responses)
+		const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+		console.log('⏱️ [callAmaliaAPI] Sending request at:', new Date().toISOString());
+		const fetchStartTime = performance.now();
 
 		const response = await fetch(url, {
 			method: 'POST',
@@ -77,25 +101,40 @@ export const callAmaliaAPI = async (
 				client_id: clientIdWithPath,
 				tenant_id: TENANT_ID,
 				onboarding_thread_id: params.onboardingThreadID || null,
+				thread_id: outboundThreadId,
 			}),
 			signal: controller.signal,
 		});
 
 		clearTimeout(timeoutId);
+		const fetchEndTime = performance.now();
+		const fetchDuration = ((fetchEndTime - fetchStartTime) / 1000).toFixed(2);
 
+		console.log(`⏱️ [callAmaliaAPI] Response received in ${fetchDuration}s`);
 		console.log('📥 [callAmaliaAPI] Response status:', response.status, response.statusText);
+		console.log('📥 [callAmaliaAPI] Response headers:', {
+			contentType: response.headers.get('content-type'),
+			contentLength: response.headers.get('content-length'),
+		});
 
 		if (!response.ok) {
-			throw new Error(`Error: ${response.statusText}`);
+			const errorText = await response.text();
+			console.error('❌ [callAmaliaAPI] Server returned error:', errorText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
 		}
 
 		const data = await response.json();
 		console.log('📦 [callAmaliaAPI] Response data:', data);
 
+		const totalTime = ((performance.now() - startTime) / 1000).toFixed(2);
+		console.log(`✅ [callAmaliaAPI] Total processing time: ${totalTime}s`);
+
 		// Phase D: Connect handoff service if we have a thread_id
 		if (data.thread_id) {
 			console.log("🔗 [callAmaliaAPI] Thread ID received:", data.thread_id);
 			// Store thread ID and connect to handoff service for operator messages
+			persistedThreadId = data.thread_id;
+
 			if (!handoffService.isConnected() || handoffService.getThreadId() !== data.thread_id) {
 				handoffService.connect(data.thread_id);
 			}
@@ -150,9 +189,54 @@ export const callAmaliaAPI = async (
 			throw new Error("Response did not include a reply field");
 		}
 	} catch (error) {
-		console.error('❌ [callAmaliaAPI] Error:', error);
-		// await params.injectMessage("Unable to connect to the chat service. Please try again.");
-		await params.injectMessage("Looks like we're unavailable right now, please try again in a moment.");
+		const totalTime = ((performance.now() - startTime) / 1000).toFixed(2);
+		console.error('❌ [callAmaliaAPI] Error after', totalTime + 's:', error);
+
+		let userMessage = "Looks like we're unavailable right now, please try again in a moment.";
+		let debugInfo = '';
+
+		// Determine specific error type for better debugging
+		if (error instanceof Error) {
+			console.error('❌ [callAmaliaAPI] Error name:', error.name);
+			console.error('❌ [callAmaliaAPI] Error message:', error.message);
+			console.error('❌ [callAmaliaAPI] Error stack:', error.stack);
+
+			if (error.name === 'AbortError') {
+				// Request timeout
+				console.error('❌ [callAmaliaAPI] REQUEST TIMEOUT - Server took longer than 30 seconds to respond');
+				debugInfo = `[Timeout after ${totalTime}s]`;
+				userMessage = "The request is taking longer than expected. Please try again.";
+			} else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+				// Network error (CORS, connection refused, etc.)
+				console.error('❌ [callAmaliaAPI] NETWORK ERROR - Could not connect to server');
+				console.error('❌ [callAmaliaAPI] Check if:');
+				console.error('   1. Flask server is running on', url);
+				console.error('   2. CORS is properly configured');
+				console.error('   3. Network connection is stable');
+				debugInfo = '[Network Error]';
+				userMessage = "Unable to connect to the chat service. Please check your connection.";
+			} else if (error.message.includes('HTTP')) {
+				// HTTP error (4xx, 5xx)
+				console.error('❌ [callAmaliaAPI] HTTP ERROR - Server returned an error response');
+				debugInfo = `[${error.message}]`;
+				userMessage = "The server encountered an error. Please try again.";
+			} else {
+				// Unknown error
+				console.error('❌ [callAmaliaAPI] UNKNOWN ERROR');
+				debugInfo = `[${error.message}]`;
+			}
+		} else {
+			console.error('❌ [callAmaliaAPI] NON-ERROR OBJECT THROWN:', error);
+		}
+
+		console.error('❌ [callAmaliaAPI] API Configuration:');
+		console.error('   - URL:', url);
+		console.error('   - Tenant ID:', TENANT_ID);
+		console.error('   - Client ID:', clientIdWithPath);
+		console.error('   - Is Dev Mode:', IS_DEV_MODE);
+
+		// Inject user-friendly error message
+		await params.injectMessage(userMessage + (IS_DEV_MODE ? ` ${debugInfo}` : ''));
 		console.log('❌ [callAmaliaAPI] API call failed');
 		return false;
 	}
