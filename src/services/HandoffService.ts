@@ -364,7 +364,7 @@ class HandoffService {
 		// Join thread room for operator messages
 		if (this.threadId) {
 			console.log("[HandoffService] Joining room for thread:", this.threadId);
-			this.socket.emit("join_room", { thread_id: this.threadId });
+			// Use the canonical room format; avoid duplicate join calls
 			this.socket.emit("join_room", { room: `thread:${this.threadId}` });
 		}
 	}
