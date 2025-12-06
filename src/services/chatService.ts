@@ -1,11 +1,14 @@
 /**
  * Chat Service
  * Handles chat history retrieval and API communication
+ * 
+ * Phase D: Also handles [HUMAN_MODE] responses for operator handoff
  */
 
-import { API_ENDPOINTS, SPECIAL_PATHS, DEFAULT_PATH, GREETING_MESSAGE } from '../config/constants';
-import { Params } from '../types/Params';
-import { parseHTMLToReact, containsHTML } from '../utils/htmlParser';
+import { API_ENDPOINTS, SPECIAL_PATHS, DEFAULT_PATH, GREETING_MESSAGE, TENANT_ID } from "../config/constants";
+import { Params } from "../types/Params";
+import { parseHTMLToReact, containsHTML } from "../utils/htmlParser";
+import { handoffService } from "./HandoffService";
 
 /**
  * Determines the effective path for API calls
@@ -26,14 +29,12 @@ const getEffectivePath = (currentPath: string): string => {
 };
 
 /**
- * Constructs the chat API URL based on the path
- * @param effectivePath - Effective path for the API
+ * Constructs the chat API URL using tenant_id as the route
+ * Endpoint format: POST /{tenant_id}/chat
  * @returns Complete API URL
  */
-const getChatApiUrl = (effectivePath: string): string => {
-	return effectivePath === SPECIAL_PATHS.ASSISTANT
-		? `${API_ENDPOINTS.CHAT_BASE}/assistant/chat`
-		: `${API_ENDPOINTS.CHAT_BASE}${effectivePath}-assistant/chat`;
+const getChatApiUrl = (): string => {
+	return `${API_ENDPOINTS.CHAT_BASE}/${TENANT_ID}/chat`;
 };
 
 /**
@@ -55,14 +56,17 @@ export const callAmaliaAPI = async (
 	console.log('🔗 [callAmaliaAPI] onboardingThreadID:', params.onboardingThreadID);
 
 	const effectivePath = getEffectivePath(currentPath);
-	const url = getChatApiUrl(effectivePath);
+	const url = getChatApiUrl();
 	const clientIdWithPath = `${sessionId || 'unknown_user_chatbotify'}-${effectivePath}`;
 
 	console.log('🔑 [callAmaliaAPI] Using client_id:', clientIdWithPath);
 	console.log('📡 [callAmaliaAPI] API URL:', url);
 
 	try {
-		// Make API request
+		// Make API request with timeout
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -71,9 +75,13 @@ export const callAmaliaAPI = async (
 			body: JSON.stringify({
 				message: params.userInput,
 				client_id: clientIdWithPath,
+				tenant_id: TENANT_ID,
 				onboarding_thread_id: params.onboardingThreadID || null,
 			}),
+			signal: controller.signal,
 		});
+
+		clearTimeout(timeoutId);
 
 		console.log('📥 [callAmaliaAPI] Response status:', response.status, response.statusText);
 
@@ -84,19 +92,28 @@ export const callAmaliaAPI = async (
 		const data = await response.json();
 		console.log('📦 [callAmaliaAPI] Response data:', data);
 
+		// Phase D: Connect handoff service if we have a thread_id
+		if (data.thread_id) {
+			console.log("🔗 [callAmaliaAPI] Thread ID received:", data.thread_id);
+			// Store thread ID and connect to handoff service for operator messages
+			if (!handoffService.isConnected() || handoffService.getThreadId() !== data.thread_id) {
+				handoffService.connect(data.thread_id);
+			}
+		}
+
 		if (data.response) {
 			// *** CRITICAL: Handle both array and string responses ***
 			if (Array.isArray(data.response)) {
 				// Handle chat history array
-				console.log('📚 [callAmaliaAPI] Processing chat history array...');
-				console.log('📚 [callAmaliaAPI] Array length:', data.response.length);
+				console.log("📚 [callAmaliaAPI] Processing chat history array...");
+				console.log("📚 [callAmaliaAPI] Array length:", data.response.length);
 				
 				for (const messageObj of data.response) {
 					const { message, role } = messageObj;
 					console.log(`💬 Injecting message - Role: ${role}, Message: ${message.substring(0, 50)}...`);
 					
 					// Parse HTML if enabled and message contains HTML tags
-					const messageContent = (enableHTMLParsing && typeof message === 'string' && containsHTML(message))
+					const messageContent = (enableHTMLParsing && typeof message === "string" && containsHTML(message))
 						? parseHTMLToReact(message)
 						: message;
 					
@@ -111,19 +128,23 @@ export const callAmaliaAPI = async (
 						console.warn(`⚠️ [callAmaliaAPI] Unexpected role ${role}`, messageObj);
 					}
 				}
+			} else if (data.response === "[HUMAN_MODE]") {
+				// Phase D: Human mode - operator will respond via WebSocket
+				console.log("🤝 [callAmaliaAPI] HUMAN_MODE detected - waiting for operator response");
+				await params.injectMessage("Connecting you with a travel specialist...");
 			} else {
 				// Handle single message (string)
-				console.log('💬 [callAmaliaAPI] Processing single message...');
+				console.log("💬 [callAmaliaAPI] Processing single message...");
 				
 				// Parse HTML if enabled and message contains HTML tags
-				const messageContent = (enableHTMLParsing && typeof data.response === 'string' 
+				const messageContent = (enableHTMLParsing && typeof data.response === "string" 
 					&& containsHTML(data.response))
 					? parseHTMLToReact(data.response)
 					: data.response;
 				
 				await params.injectMessage(messageContent);
 			}
-			console.log('✅ [callAmaliaAPI] API call completed successfully');
+			console.log("✅ [callAmaliaAPI] API call completed successfully");
 			return true;
 		} else {
 			throw new Error("Response did not include a reply field");

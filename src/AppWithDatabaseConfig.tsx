@@ -25,6 +25,8 @@ import { useParentMessaging } from "./hooks/useParentMessaging"; // Parent windo
 
 // Chat service functions
 import { getChatHistory, callAmaliaAPI } from "./services/chatService";
+import { handoffService } from "./services/HandoffService";
+import { useHandoff } from "./hooks/useHandoff";
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
@@ -200,6 +202,9 @@ function AppWithDatabaseConfig() {
 	
 	// Ref to track if initial messages have been injected
 	const hasInjectedInitialMessages = useRef(false);
+	
+	// Ref to hold current params for operator message injection
+	const [currentParams, setCurrentParams] = useState<Params | null>(null);
 
 	// Extract URL parameters for configuration overrides
 	const urlParams = useURLParams();
@@ -219,6 +224,32 @@ function AppWithDatabaseConfig() {
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
 	console.log("🔗 URL Parameters:", urlParams);
+
+	// ========================================================================
+	// HANDOFF SERVICE INITIALIZATION
+	// ========================================================================
+	
+	// Use handoff hook for receiving operator messages
+	const { isConnected: handoffConnected, isInHumanMode, operatorName } = useHandoff({
+		params: currentParams
+	});
+
+	console.log("[Handoff] Connected:", handoffConnected, "Human mode:", isInHumanMode, "Operator:", operatorName);
+	
+	useEffect(() => {
+		// Initialize handoff service to listen for tenant-level events
+		handoffService.init();
+
+		// Register callback for handoff requests (for testing)
+		const unsubscribe = handoffService.onHandoffRequest((request) => {
+			console.log("📣 [AppWithDatabaseConfig] Handoff request received:", request);
+			alert(`Handoff request from ${request.customer_name || "customer"}: ${request.reason}`);
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
 
 	// ========================================================================
 	// CONFIGURATION LOADING
@@ -403,6 +434,9 @@ function AppWithDatabaseConfig() {
 			message: async (params: Params) => {
 				console.log('🎬 [Flow] Entering start block - fetching chat history...');
 				
+				// Update params ref for operator message injection
+				setCurrentParams(params);
+				
 				// Check if HTML parsing is enabled
 				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;
 				
@@ -431,6 +465,9 @@ function AppWithDatabaseConfig() {
 		loop: {
 			message: async (params: Params) => {
 				console.log('🔄 [Flow] In loop block - processing user message...');
+				
+				// Update params ref for operator message injection
+				setCurrentParams(params);
 				
 				// Check if HTML parsing is enabled
 				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;
