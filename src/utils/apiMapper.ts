@@ -26,7 +26,41 @@ export const mapChatDesignToBrandTokens = (chatDesign: any): BrandTokens => {
 };
 
 /**
+ * Helper function to determine if widget should be in embedded mode.
+ * Checks chatType field from new schema.
+ * 
+ * @param chatDesign - The chatDesign object from the API response
+ * @returns true if embedded mode, false if popup mode
+ */
+const isEmbeddedMode = (chatDesign: any): boolean => {
+	return chatDesign?.chatType === "embedded";
+};
+
+/**
+ * Helper function to determine initial open state based on device and mode.
+ * For popup mode, checks desktopBehavior.initialState (defaults to desktop for now).
+ * For embedded mode, always returns true (embedded is always "open").
+ * 
+ * @param chatDesign - The chatDesign object from the API response
+ * @returns true if should be initially open, false otherwise
+ */
+const getInitialOpenState = (chatDesign: any): boolean => {
+	if (isEmbeddedMode(chatDesign)) {
+		return true; // Embedded mode is always "open"
+	}
+	
+	// Popup mode: check desktop behavior (can be enhanced to detect mobile)
+	const initialState = chatDesign?.desktopBehavior?.initialState || 
+	                     chatDesign?.onPageLoadDisplay || // Fallback to old field
+	                     "closed"; // Default to closed
+	
+	return initialState === "open";
+};
+
+/**
  * Maps full API widget configuration to chatbot settings.
+ * Supports both new schema (chatType, embeddedDimensions, desktopBehavior, mobileBehavior)
+ * and legacy schema (onPageLoadDisplay) for backward compatibility.
  * 
  * @param apiData - The full widget configuration from the API
  * @returns Object with branding tokens and other settings
@@ -35,6 +69,28 @@ export const mapApiToConfig = (apiData: any) => {
 	const branding = mapChatDesignToBrandTokens(apiData.chatDesign);
 	const chatDesign = apiData.chatDesign;
 	const generalSettings = apiData.generalSettings;
+	
+	// Determine if embedded mode from chatType field
+	const embedded = isEmbeddedMode(chatDesign);
+	
+	// Get dimensions based on mode
+	let dimensions = {};
+	if (embedded && chatDesign?.embeddedDimensions) {
+		// Embedded mode: use embeddedDimensions
+		const embWidth = chatDesign.embeddedDimensions.width;
+		const embHeight = chatDesign.embeddedDimensions.height;
+		dimensions = {
+			width: embWidth ? `${embWidth}px` : undefined,
+			height: embHeight ? `${embHeight}px` : undefined,
+		};
+	} else if (!embedded && chatDesign?.desktopBehavior?.popupDimensions) {
+		// Popup mode: use desktopBehavior.popupDimensions (can be enhanced for mobile detection)
+		const popupDims = chatDesign.desktopBehavior.popupDimensions;
+		dimensions = {
+			width: popupDims.width ? `${popupDims.width}px` : undefined,
+			height: popupDims.height ? `${popupDims.height}px` : undefined,
+		};
+	}
 	
 	return {
 		branding,
@@ -52,15 +108,18 @@ export const mapApiToConfig = (apiData: any) => {
 			showAvatar: false, // Can be configured if needed
 		},
 		chatWindow: {
-			defaultOpen: chatDesign?.onPageLoadDisplay === "open",
+			defaultOpen: getInitialOpenState(chatDesign),
 			showMessageIndicator: chatDesign?.showMessageIndicator,
 		},
 		general: {
 			defaultHelloMessage: generalSettings?.defaultHelloMessage,
+			embedded: embedded, // Set embedded mode from chatType
 		},
 		chatButton: {
 			// Can add button customization here if needed
-		}
+		},
+		// Store dimensions from database (will be merged with URL overrides later)
+		chatWindowSize: Object.keys(dimensions).length > 0 ? dimensions : undefined,
 	};
 };
 
@@ -81,7 +140,8 @@ export const mapApiToConfig = (apiData: any) => {
  * - secondaryColor: Overrides secondary theme color (with transparency)
  * - title: Overrides header title text
  * - transparency: Applied to color values (0-1 range)
- * - embedded: Enables embedded mode ("true" or "false")
+ * - chatType: Widget display mode ("embedded" or "popup") - NEW, aligns with database schema
+ * - embedded: Enables embedded mode ("true" or "false") - LEGACY, use chatType instead
  * - width: Chat window width in pixels (e.g., "600")
  * - height: Chat window height in pixels (e.g., "700")
  * - maxWidth: Maximum chat window width in pixels
@@ -165,8 +225,18 @@ export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 	}
 	
 	// Apply embedded mode override
-	if (urlParams.embedded !== undefined) {
-		console.log("🔧 [apiMapper] Applying embedded override");
+	// URL parameter takes priority over database chatType field
+	// Support both legacy "embedded" param and new "chatType" param
+	if (urlParams.chatType !== undefined) {
+		// New chatType parameter (preferred)
+		console.log("🔧 [apiMapper] Applying chatType override from URL");
+		console.log("🔧 [apiMapper] urlParams.chatType:", urlParams.chatType);
+		overriddenConfig.general = overriddenConfig.general || {};
+		overriddenConfig.general.embedded = urlParams.chatType === "embedded";
+		console.log("🔧 [apiMapper] overriddenConfig.general.embedded:", overriddenConfig.general.embedded);
+	} else if (urlParams.embedded !== undefined) {
+		// Legacy embedded parameter (for backward compatibility)
+		console.log("🔧 [apiMapper] Applying embedded override from URL (legacy param)");
 		console.log("🔧 [apiMapper] urlParams.embedded:", urlParams.embedded);
 		console.log("🔧 [apiMapper] Converting to boolean:", urlParams.embedded === "true");
 		overriddenConfig.general = overriddenConfig.general || {};
