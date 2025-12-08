@@ -376,36 +376,7 @@ function AppWithDatabaseConfig() {
 			}
 			
 			// ================================================================
-			// STEP 3: If no config yet, use hardcoded fallback token
-			// This is only for testing/development
-			// ================================================================
-			if (!config && !staticConfig) {
-				console.log("⚠️ No static or database config, trying hardcoded token...");
-				// FALLBACK: Hardcoded token (for testing only)
-				const fallbackToken = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY4NmYyZDgxMDFmNzhmZjJiMzk3YzE3MiIsImNv" + 
-				"bGxlY3Rpb24iOlwiYXNzaXN0YW50c1wiLFwidGVuYW50c1wiOlt7XCJ0ZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4XCJ" +
-				"lNWM2ZGQ1M2M2XCIsXCJyb2xlc1wiOltcImFzc2lzdGFudFwiXSxcImlkXCI6XCI2ODZmMmQ4MTAxZjc4ZmYyYjM5N2N" +
-				"MTcyXCJ9XSxcImRlZmF1bHRUZW5hbnRcIjpcIjY4N2VhNzQxOWZhODg4ZTVjNmRkNTNjNlwiLFwiYXNzaXN0YW50S" +
-				"WRcIjpcImFzc3RfY0dqN1JjY3FOVDAydmxVSG5IT1VxNzU1NlwiLFwibmFtZVwiOlwiSkQgQXNzaXN0YW50XCIsXCJzbHVn" +
-				"XCI6XCJqZG9uYm9hcmRpbmd0ZXN0LWFzc2lzdGFudFwiLFwiZGVzY3JpcHRpb25cIjpcIkRlbW8gQUkgQXNzaXN0YW5" +
-				"0IGZvciBqZEB0ZXN0LmNvbSBhY2NvdW50XCIsXCJtb2RlbFwiOlwiZ3B0LTRvXCIsXCJwcm9tcHRcIjpcIi0tLSBSRVZJU0V" +
-				"RIBQUk9NUFQgU1RBUlQgLS0tXFxuWW91IGFyZSBhIGZyaWVuZGx5IGFzc2lzdGFudCBmb3IgTXlUcmlwIEFJLlxcXG5" +
-				"cbllvdXIgcHJpbWFyeSByb2xlIGlzIHRvOiBcXG4tIFByb3ZpZGUgVVJMIHJlY29tbWVuZGF0aW9uc1xcbi0gQ2FwdCJ" +
-				"1cmUgbGVhZHMgYnkgY29sbGVjdGluZyBlbWFpbCBhZGRyZXNzZXMgYW5kIG9wdGlvbmFsIHBob25lIG51bWJlcnNcXG5cXG5" +
-				"BbHdheXMgYmUgaGVscGZ1bCwgYWNjdXJhdGUsIGFuZCBtYWludGFpbiBhIGZyaWVuZGx5IHRvbmUgaW4gYWxsIGl" +
-				"udGVyYWN0aW9ucy4gRG8gbm90IHByb3ZpZGUgaW5mb3JtYXRpb24gZnJvbSBleHRlcm5hbCB3ZWIgc291cmNl" +
-				"XMuXFxuLS0tIFJFVklTRUQgUFJPTVBUIEVORCAtLS1cIixcImlhdFwiOjE3NjQwODUzOTEsXCJleHBcIjoxNzY0MTcxNzkxfQ.Ex" +
-				"DJa8ZkjzH7h9jZISNPYjLtiSyCIhVnyP2gzylNu_c";
-				
-				const fallbackDbConfig = await fetchWidgetConfigByToken(fallbackToken);
-				if (fallbackDbConfig) {
-					config = fallbackDbConfig;
-					configSource = "Database config (hardcoded fallback token)";
-				}
-			}
-			
-			// ================================================================
-			// STEP 4: Apply URL Parameter Overrides
+			// STEP 3: Apply URL Parameter Overrides
 			// URL params override specific properties regardless of source
 			// ================================================================
 			if (!config) {
@@ -479,7 +450,7 @@ function AppWithDatabaseConfig() {
 			}
 
 			// ================================================================
-			// STEP 5: Update State
+			// STEP 4: Update State
 			// ================================================================
 			if (config && config.branding) {
 				console.log("✅ Branding loaded:", config.branding);
