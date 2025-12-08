@@ -154,6 +154,12 @@ export const callAmaliaAPI = async (
 			}
 		}
 
+		// ✅ FIX: Handle human mode - empty response is valid when mode is 'human'
+		if (data.mode === 'human' && (data.response === '' || data.response === null || data.response === undefined)) {
+			console.log("🤝 [callAmaliaAPI] Human mode - no AI response, waiting for operator");
+			return true;  // Success - operator will respond via WebSocket
+		}
+
 		if (data.response) {
 			// *** CRITICAL: Handle both array and string responses ***
 			if (Array.isArray(data.response)) {
