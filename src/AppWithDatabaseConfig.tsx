@@ -612,6 +612,10 @@ function AppWithDatabaseConfig() {
 			...(dbConfig?.chatHistory || {}),
 			disabled: true,                   // Disable local chat history (using backend history)
 		},
+		chatWindow: {
+			...(dbConfig?.chatWindow || {}),
+			defaultOpen: dbConfig?.chatWindow?.defaultOpen ?? true, // Default to open if not specified
+		},
 		userBubble: dbConfig?.userBubble || { showAvatar: true },
 		botBubble: dbConfig?.botBubble || { showAvatar: true },
 		// Preserve JSX elements in header (title can be JSX)
@@ -631,6 +635,8 @@ function AppWithDatabaseConfig() {
 	console.log("⚙️ [Settings Merge] mergedSettings:", mergedSettings);
 	console.log("⚙️ [Settings Merge] mergedSettings.general:", mergedSettings.general);
 	console.log("⚙️ [Settings Merge] mergedSettings.general.embedded:", mergedSettings.general?.embedded);
+	console.log("⚙️ [Settings Merge] mergedSettings.chatWindow:", mergedSettings.chatWindow);
+	console.log("⚙️ [Settings Merge] mergedSettings.chatWindow.defaultOpen:", mergedSettings.chatWindow?.defaultOpen);
 	console.log("⚙️ [Settings Merge] mergedSettings.header:", mergedSettings.header);
 	console.log("⚙️ [Settings Merge] mergedSettings.header.fontFamily:", mergedSettings.header?.fontFamily);
 	
