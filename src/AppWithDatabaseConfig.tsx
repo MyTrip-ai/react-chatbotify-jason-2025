@@ -673,16 +673,45 @@ function AppWithDatabaseConfig() {
 	if (!configLoaded) {
 		console.log("⏸️ Showing loading screen");
 		return (
-			// Centered loading message
-			// STYLING: Inline styles used here for simplicity
 			<div style={{
 				display: "flex",
+				flexDirection: "column",
 				justifyContent: "center",
 				alignItems: "center",
-				height: "100vh", // Full viewport height
-				fontFamily: defaultBrandTokens.fontFamily
+				height: "100vh",
+				fontFamily: defaultBrandTokens.fontFamily,
+				background: "#ffffff",
+				color: "#333333"
 			}}>
-				Loading chatbot configuration...
+				<div style={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					gap: "20px"
+				}}>
+					{/* Animated spinner */}
+					<div style={{
+						width: "50px",
+						height: "50px",
+						border: "4px solid rgba(0, 0, 0, 0.1)",
+						borderTop: "4px solid #667eea",
+						borderRadius: "50%",
+						animation: "spin 1s linear infinite"
+					}} />
+					<style>{`
+						@keyframes spin {
+							0% { transform: rotate(0deg); }
+							100% { transform: rotate(360deg); }
+						}
+					`}</style>
+					<div style={{
+						fontSize: "18px",
+						fontWeight: 300,
+						letterSpacing: "0.5px"
+					}}>
+						Preparing your assistant...
+					</div>
+				</div>
 			</div>
 		);
 	}
