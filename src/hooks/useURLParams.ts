@@ -14,7 +14,8 @@ export type URLParams = {
 	secondaryColor?: string;
 	title?: string;
 	transparency?: string;
-	embedded?: string;
+	embedded?: string; // Legacy: "true" or "false" to enable embedded mode
+	chatType?: string; // New: "embedded" or "popup" (aligns with database schema)
 	width?: string;
 	height?: string;
 	maxWidth?: string;
@@ -33,7 +34,8 @@ export type URLParams = {
  * - secondaryColor: Secondary theme color (hex)
  * - title: Header title text
  * - transparency: Color transparency (0-1)
- * - embedded: Enable embedded mode ("true" or "false")
+ * - embedded: Enable embedded mode ("true" or "false") - legacy parameter
+ * - chatType: Widget display mode ("embedded" or "popup") - new parameter
  * - width: Chat window width in pixels (e.g., "600")
  * - height: Chat window height in pixels (e.g., "700")
  * - maxWidth: Maximum chat window width in pixels
@@ -42,9 +44,9 @@ export type URLParams = {
  * @returns Object containing all URL parameters
  * 
  * @example
- * // URL: ?token=abc123&primaryColor=FF5733&title=My%20Bot
+ * // URL: ?token=abc123&primaryColor=FF5733&title=My%20Bot&chatType=embedded
  * const params = useURLParams();
- * // params = { token: "abc123", primaryColor: "FF5733", title: "My Bot" }
+ * // params = { token: "abc123", primaryColor: "FF5733", title: "My Bot", chatType: "embedded" }
  */
 export const useURLParams = (): URLParams => {
 	return useMemo(() => {
@@ -61,6 +63,7 @@ export const useURLParams = (): URLParams => {
 			title: searchParams.get("title") || undefined,
 			transparency: searchParams.get("transparency") || undefined,
 			embedded: searchParams.get("embedded") || undefined,
+			chatType: searchParams.get("chatType") || undefined,
 			width: searchParams.get("width") || undefined,
 			height: searchParams.get("height") || undefined,
 			maxWidth: searchParams.get("maxWidth") || undefined,
