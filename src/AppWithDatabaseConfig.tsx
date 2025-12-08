@@ -338,6 +338,8 @@ function AppWithDatabaseConfig() {
 			console.log("🔗 URL params to apply:", urlParams);
 			config = applyURLParamOverrides(config, urlParams);
 			console.log("✨ Config AFTER URL overrides:", config);
+			console.log("✨ Config AFTER - header:", config?.header);
+			console.log("✨ Config AFTER - header.fontFamily:", config?.header?.fontFamily);
 			console.log("✨ Final config source:", configSource || "URL params only");
 			
 			// ================================================================
@@ -629,6 +631,8 @@ function AppWithDatabaseConfig() {
 	console.log("⚙️ [Settings Merge] mergedSettings:", mergedSettings);
 	console.log("⚙️ [Settings Merge] mergedSettings.general:", mergedSettings.general);
 	console.log("⚙️ [Settings Merge] mergedSettings.general.embedded:", mergedSettings.general?.embedded);
+	console.log("⚙️ [Settings Merge] mergedSettings.header:", mergedSettings.header);
+	console.log("⚙️ [Settings Merge] mergedSettings.header.fontFamily:", mergedSettings.header?.fontFamily);
 	
 	// ========================================================================
 	// STYLES CONFIGURATION
@@ -662,6 +666,25 @@ function AppWithDatabaseConfig() {
 		};
 		
 		console.log("📏 [Size Override] Updated chatWindowStyle:", chatbotStyles.chatWindowStyle);
+	}
+	
+	// Apply header font family if specified
+	if (dbConfig?.header?.fontFamily) {
+		console.log("🔤 [Font Override] Applying header font family:", dbConfig.header.fontFamily);
+		console.log("🔤 [Font Override] Current headerStyle BEFORE:", chatbotStyles.headerStyle);
+		
+		chatbotStyles = {
+			...chatbotStyles,
+			headerStyle: {
+				...chatbotStyles.headerStyle,
+				fontFamily: dbConfig.header.fontFamily,
+			},
+		};
+		
+		console.log("🔤 [Font Override] Updated headerStyle AFTER:", chatbotStyles.headerStyle);
+	} else {
+		console.log("⚠️ [Font Override] No fontFamily found in dbConfig.header");
+		console.log("⚠️ [Font Override] dbConfig.header:", dbConfig?.header);
 	}
 	
 	// ========================================================================

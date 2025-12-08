@@ -98,6 +98,7 @@ export const mapApiToConfig = (apiData: any) => {
 			title: chatDesign?.headerText || "Chat",
 			avatar: chatDesign?.chatWidgetyLogo,
 			showAvatar: !!chatDesign?.chatWidgetyLogo,
+			fontFamily: chatDesign?.headerFont, // Font family for title
 		},
 		botBubble: {
 			avatar: chatDesign?.botAvatar,
@@ -139,6 +140,7 @@ export const mapApiToConfig = (apiData: any) => {
  * - primaryColor: Overrides primary theme color (with transparency)
  * - secondaryColor: Overrides secondary theme color (with transparency)
  * - title: Overrides header title text
+ * - titleFont: Overrides header title font family
  * - transparency: Applied to color values (0-1 range)
  * - chatType: Widget display mode ("embedded" or "popup") - NEW, aligns with database schema
  * - embedded: Enables embedded mode ("true" or "false") - LEGACY, use chatType instead
@@ -222,6 +224,12 @@ export const applyURLParamOverrides = (config: any, urlParams: URLParams) => {
 	if (urlParams.title) {
 		overriddenConfig.header = overriddenConfig.header || {};
 		overriddenConfig.header.title = urlParams.title;
+	}
+	
+	// Apply title font override
+	if (urlParams.titleFont) {
+		overriddenConfig.header = overriddenConfig.header || {};
+		overriddenConfig.header.fontFamily = urlParams.titleFont;
 	}
 	
 	// Apply embedded mode override
