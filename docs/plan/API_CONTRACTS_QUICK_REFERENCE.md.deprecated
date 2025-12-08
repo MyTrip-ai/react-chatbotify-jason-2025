@@ -1,32 +1,14 @@
-# API Contracts Quick Reference
+# Deprecated: API Contracts Quick Reference
 
-## Overview
+This local copy has been **retired** and is kept only as a pointer to the canonical documentation.
 
-This document provides a quick reference for all API contracts between the Chat Widget, Assistant Server, and CRM.
+**Canonical document:**  
+`/home/jason/Documents/Python-Projects-Assistant-Server--cleanup-branch/docs/contracts/API_CONTRACTS_QUICK_REFERENCE.md`
 
----
+**Master index (all operator handoff docs):**  
+`/home/jason/Documents/Python-Projects-Assistant-Server--cleanup-branch/docs/README.md`
 
-## System Endpoints Summary
-
-| System | Port | Base URL (Dev) | Base URL (Prod) |
-|--------|------|----------------|-----------------|
-| Chat Widget | 5173 | http://localhost:5173 | (embedded in customer site) |
-| Assistant Server | 8001 | http://localhost:8001 | https://chats.mytrip.ai |
-| CRM Frontend | 5174 | http://localhost:5174 | https://crm.mytrip.ai |
-| CRM API (Express) | 3001 | http://localhost:3001 | https://api.mytrip.ai |
-| PayloadCMS | 3000 | http://localhost:3000 | https://platform.mytrip.ai |
-
----
-
-## HTTP API Contracts
-
-### 1. Chat Endpoint (Widget → Assistant Server)
-
-**Endpoint**: `POST /<client_name>/chat`
-
-**Example**: `POST /tenant-undiscovered-2/chat`
-
-**Request**:
+All updates belong in the canonical document. Do **not** edit this file.
 ```json
 {
   "message": "I want to plan a trip to the French Alps",

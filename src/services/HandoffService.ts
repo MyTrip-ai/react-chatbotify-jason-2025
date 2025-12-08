@@ -11,6 +11,30 @@ import { io, Socket } from "socket.io-client";
 import { API_ENDPOINTS, TENANT_ID } from "../config/constants";
 
 // ============================================================================
+// CONTRACT ENFORCEMENT - Local implementations matching @mytrip/handoff-contracts
+// ============================================================================
+
+const EVENT_NAMES = {
+	JOIN_ROOM: "join_room",
+} as const;
+
+function getTenantRoom(tenantSlug: string): string {
+	if (!tenantSlug) throw new Error("Tenant slug cannot be empty");
+	// Reject MongoDB ObjectId format (24 hex chars)
+	if (tenantSlug.length === 24 && /^[0-9a-f]{24}$/i.test(tenantSlug)) {
+		throw new Error(`Invalid tenant slug: "${tenantSlug}" looks like MongoDB ObjectId`);
+	}
+	return `tenant:${tenantSlug}`;
+}
+
+function getThreadRoom(threadId: string): string {
+	if (!threadId || !threadId.startsWith("thread_")) {
+		throw new Error(`Invalid thread ID format: ${threadId}. Must start with "thread_"`);
+	}
+	return `thread:${threadId}`;
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -66,6 +90,8 @@ class HandoffService {
 	private threadId: string | null = null;
 	private tenantId: string = TENANT_ID;
 	private serverUrl: string;
+	private joinedThreadRoom: string | null = null;
+	private tenantRoomJoined: boolean = false;
 
 	// Callbacks
 	private onOperatorMessageCallbacks: OperatorMessageCallback[] = [];
@@ -132,6 +158,8 @@ class HandoffService {
 		}
 
 		this.threadId = threadId;
+		this.joinedThreadRoom = null;
+		this.tenantRoomJoined = false;
 		console.log("[HandoffService] Connecting to:", this.serverUrl, "for thread:", threadId);
 
 		// Create Socket.IO connection (unauthenticated for customer widget)
@@ -147,6 +175,31 @@ class HandoffService {
 	}
 
 	/**
+	 * Apply mode info coming directly from the chat API response (pre-socket event)
+	 * Input mode can include 'handoff_pending' which maps to 'human'
+	 */
+	applyModeFromApi(modeData: Partial<ModeChangeEvent> & { mode?: string }): void {
+		const rawMode: string | undefined = modeData.mode;
+		if (!rawMode) return;
+
+		// Map temporary/handoff_pending states to allowed modes
+		// API can return "handoff_pending" which we map to "human"
+		const effectiveMode: ModeChangeEvent["mode"] = 
+			rawMode === "handoff_pending" ? "human" : (rawMode as ModeChangeEvent["mode"]);
+
+		const event: ModeChangeEvent = {
+			thread_id: modeData.thread_id || this.threadId || "",
+			mode: effectiveMode as ModeChangeEvent["mode"],
+			operator_id: modeData.operator_id,
+			operator_name: modeData.operator_name,
+			mode_version: modeData.mode_version ?? 0,
+			changed_at: modeData.changed_at ?? new Date().toISOString(),
+		};
+
+		this.onModeChangeCallbacks.forEach(cb => cb(event));
+	}
+
+	/**
 	 * Disconnect from the WebSocket server
 	 */
 	disconnect(): void {
@@ -156,6 +209,8 @@ class HandoffService {
 			this.socket = null;
 		}
 		this.threadId = null;
+		this.joinedThreadRoom = null;
+		this.tenantRoomJoined = false;
 		this.processedMessageIds.clear();
 	}
 
@@ -173,6 +228,7 @@ class HandoffService {
 		}
 
 		this.threadId = threadId;
+		this.joinedThreadRoom = null;
 		this.processedMessageIds.clear();
 
 		// Join new room
@@ -228,8 +284,11 @@ class HandoffService {
 	}
 
 	onHandoffRequest(callback: HandoffRequestCallback): () => void {
+		const count = this.onHandoffRequestCallbacks.length + 1;
+		console.log("[HandoffService] 📝 Registering handoff request callback, total:", count);
 		this.onHandoffRequestCallbacks.push(callback);
 		return () => {
+			console.log("[HandoffService] 🗑️ Unregistering handoff request callback");
 			this.onHandoffRequestCallbacks = this.onHandoffRequestCallbacks.filter(cb => cb !== callback);
 		};
 	}
@@ -243,13 +302,16 @@ class HandoffService {
 
 		// Connection events
 		this.socket.on("connect", () => {
-			console.log("[HandoffService] ✅ Connected to handoff server");
+			console.log("[HandoffService] ✅ Connected to handoff server, socket.id:", this.socket?.id);
+			console.log("[HandoffService] 🏠 Tenant ID for room join:", this.tenantId);
 			this.joinThreadRoom();
 			this.notifyConnectionCallbacks(true);
 		});
 
 		this.socket.on("disconnect", (reason) => {
 			console.log("[HandoffService] ❌ Disconnected:", reason);
+			this.joinedThreadRoom = null;
+			this.tenantRoomJoined = false;
 			this.notifyConnectionCallbacks(false);
 		});
 
@@ -335,7 +397,9 @@ class HandoffService {
 
 		// Handoff request event (for testing/debugging)
 		this.socket.on("handoff_request", (data: unknown) => {
-			console.log("[HandoffService] 📣 Handoff request received:", data);
+			console.log("[HandoffService] 📣 HANDOFF_REQUEST EVENT RECEIVED!");
+			console.log("[HandoffService] 📣 Raw data:", JSON.stringify(data, null, 2));
+			console.log("[HandoffService] 📣 Registered callbacks count:", this.onHandoffRequestCallbacks.length);
 
 			const rawData = data as Record<string, unknown>;
 			const requestData = (rawData.data || rawData) as Record<string, unknown>;
@@ -350,22 +414,55 @@ class HandoffService {
 				timestamp: requestData.timestamp as string,
 			};
 
-			this.onHandoffRequestCallbacks.forEach(cb => cb(request));
+			console.log("[HandoffService] 📣 Parsed request:", request);
+			this.onHandoffRequestCallbacks.forEach((cb, i) => {
+				console.log(`[HandoffService] 📣 Calling callback ${i}`);
+				cb(request);
+			});
+		});
+
+		// DEBUG: Catch-all to see ANY events from server
+		this.socket.onAny((eventName, ...args) => {
+			console.log(`[HandoffService] 🔔 EVENT: ${eventName}`, args);
 		});
 	}
 
 	private joinThreadRoom(): void {
-		if (!this.socket?.connected) return;
+		if (!this.socket?.connected) {
+			console.log("[HandoffService] ⚠️ joinThreadRoom called but socket not connected");
+			return;
+		}
 
 		// Join tenant room for handoff_request events
-		console.log("[HandoffService] Joining tenant room:", `tenant:${this.tenantId}`);
-		this.socket.emit("join_room", { room: `tenant:${this.tenantId}` });
+		// CONTRACT ENFORCEMENT: Use getTenantRoom() and include client_type
+		if (!this.tenantRoomJoined) {
+			const tenantRoom = getTenantRoom(this.tenantId);
+			console.log("[HandoffService] 🚪 JOINING TENANT ROOM:", tenantRoom);
+			this.socket.emit(EVENT_NAMES.JOIN_ROOM, { 
+				room: tenantRoom,
+				client_type: 'widget'  // REQUIRED: Identifies client for debugging
+			});
+			this.tenantRoomJoined = true;
+			console.log("[HandoffService] ✅ Tenant room join emitted:", tenantRoom);
+		} else {
+			console.log("[HandoffService] ℹ️ Tenant room already joined:", getTenantRoom(this.tenantId));
+		}
 
 		// Join thread room for operator messages
+		// CONTRACT ENFORCEMENT: Use getThreadRoom() and include client_type
 		if (this.threadId) {
-			console.log("[HandoffService] Joining room for thread:", this.threadId);
-			// Use the canonical room format; avoid duplicate join calls
-			this.socket.emit("join_room", { room: `thread:${this.threadId}` });
+			const threadRoom = getThreadRoom(this.threadId);
+			if (this.joinedThreadRoom === threadRoom) {
+				console.log("[HandoffService] ℹ️ Already joined thread room:", threadRoom);
+				return;
+			}
+			console.log("[HandoffService] 🚪 JOINING THREAD ROOM:", threadRoom);
+			this.socket.emit(EVENT_NAMES.JOIN_ROOM, { 
+				room: threadRoom,
+				client_type: 'widget'  // REQUIRED: Identifies client for debugging
+			});
+			this.joinedThreadRoom = threadRoom;
+			console.log("[HandoffService] ✅ Thread room join emitted:", threadRoom);
 		}
 	}
 

@@ -6,6 +6,7 @@ import { Params } from "./types/Params";
 import { defaultBrandTokens } from "./types/BrandTokens";
 import { myTripFloatingSettings, myTripFloatingStyles } from "./themes/myTripTheme";
 import { Settings } from "./types/Settings";
+import { getTenantRoom, EVENT_NAMES } from "./types/handoff";
 
 const TENANT_ID = "mytrip-ai";
 const SERVER_URL = "http://localhost:8001";
@@ -76,8 +77,13 @@ function App() {
 
 		socket.on("connect", () => {
 			console.log("✅ [Socket.IO] Connected, socket id:", socket.id);
-			console.log("🚪 [Socket.IO] Joining room:", `tenant:${TENANT_ID}`);
-			socket.emit("join_room", { room: `tenant:${TENANT_ID}` });
+			const tenantRoom = getTenantRoom(TENANT_ID);
+			console.log("🚪 [Socket.IO] Joining room:", tenantRoom);
+			// CONTRACT ENFORCEMENT: Use getTenantRoom() and include client_type
+			socket.emit(EVENT_NAMES.JOIN_ROOM, { 
+				room: tenantRoom,
+				client_type: 'widget'  // REQUIRED: Identifies client for debugging
+			});
 		});
 
 		socket.on("connect_error", (error) => {

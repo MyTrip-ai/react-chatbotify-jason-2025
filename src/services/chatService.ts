@@ -72,15 +72,23 @@ export const callAmaliaAPI = async (
 
 	console.log('🔑 [callAmaliaAPI] Using client_id:', clientIdWithPath);
 	console.log('📡 [callAmaliaAPI] API URL:', url);
-	const outboundThreadId = params.onboardingThreadID || persistedThreadId || null;
-
-	console.log('📡 [callAmaliaAPI] Request body:', JSON.stringify({
+	// Only include thread_id after the server issues it; omit on the very first message
+	const outboundThreadId = params.onboardingThreadID || persistedThreadId || undefined;
+	const requestBody: Record<string, unknown> = {
 		message: params.userInput,
 		client_id: clientIdWithPath,
 		tenant_id: TENANT_ID,
-		onboarding_thread_id: params.onboardingThreadID || null,
-		thread_id: outboundThreadId,
-	}, null, 2));
+	};
+
+	if (params.onboardingThreadID) {
+		requestBody.onboarding_thread_id = params.onboardingThreadID;
+	}
+	if (outboundThreadId) {
+		requestBody.thread_id = outboundThreadId;
+	}
+
+	console.log('📡 [callAmaliaAPI] Outbound thread_id:', outboundThreadId);
+	console.log('📡 [callAmaliaAPI] Request body:', JSON.stringify(requestBody, null, 2));
 
 	try {
 		// Make API request with timeout
@@ -96,13 +104,7 @@ export const callAmaliaAPI = async (
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({
-				message: params.userInput,
-				client_id: clientIdWithPath,
-				tenant_id: TENANT_ID,
-				onboarding_thread_id: params.onboardingThreadID || null,
-				thread_id: outboundThreadId,
-			}),
+			body: JSON.stringify(requestBody),
 			signal: controller.signal,
 		});
 
@@ -137,6 +139,18 @@ export const callAmaliaAPI = async (
 
 			if (!handoffService.isConnected() || handoffService.getThreadId() !== data.thread_id) {
 				handoffService.connect(data.thread_id);
+			}
+
+			// ✅ API FALLBACK: Apply mode from REST response (before socket events arrive)
+			// This handles: page reload mid-conversation, missed socket events, initial state
+			if (data.mode && (data.mode === 'human' || data.mode === 'handoff_pending')) {
+				console.log(`🔄 [callAmaliaAPI] API says mode is '${data.mode}' - applying fallback`);
+				handoffService.applyModeFromApi({
+					mode: data.mode,
+					mode_version: data.mode_version || 0,
+					operator_id: data.operator_id,
+					operator_name: data.operator_name,
+				});
 			}
 		}
 

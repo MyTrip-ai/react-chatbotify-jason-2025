@@ -98,6 +98,11 @@ A full documentation (along with a [**live playground**](https://react-chatbotif
 
 [**Examples**](https://react-chatbotify.com/docs/examples/basic_form/) on the website are also run on a live editor so feel free to explore to your heart's content!
 
+#### Operator Handoff (Canonical Source)
+- Canonical handoff docs (contracts, integration, troubleshooting) now live in the chat server repo:  
+  `/home/jason/Documents/Python-Projects-Assistant-Server--cleanup-branch/docs/README.md`
+- Widget pointer: `docs/plan/API_CONTRACTS_README.md`
+
 ### Team
 * [Tan Jin](https://github.com/tjtanjin)
 
