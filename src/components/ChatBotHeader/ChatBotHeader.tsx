@@ -25,11 +25,21 @@ const ChatBotHeader = ({ buttons }: { buttons: JSX.Element[] }) => {
 		...styles.headerStyle
 	};
 
+	// Determine font family with priority: settings > styles > default
+	const fontFamily = settings.header?.fontFamily || 
+	styles.headerStyle?.fontFamily || 
+	"Playfair Display, 'Cormorant Garamond', serif";
+	
+	console.log("🔤 [ChatBotHeader] Font family sources:");
+	console.log("  - settings.header.fontFamily:", settings.header?.fontFamily);
+	console.log("  - styles.headerStyle.fontFamily:", styles.headerStyle?.fontFamily);
+	console.log("  - Final fontFamily:", fontFamily);
+	
 	const titleStyle: React.CSSProperties = {
 		margin: 0,
 		fontSize: "1.6rem",
 		fontWeight: 300,
-		fontFamily: "Playfair Display, 'Cormorant Garamond', serif",
+		fontFamily: fontFamily,
 		color: settings.general?.primaryColor || "var(--color-accent-teal)",
 		textAlign: "center"
 	};

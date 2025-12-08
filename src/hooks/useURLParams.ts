@@ -13,6 +13,7 @@ export type URLParams = {
 	primaryColor?: string;
 	secondaryColor?: string;
 	title?: string;
+	titleFont?: string; // Font family for header title
 	transparency?: string;
 	embedded?: string; // Legacy: "true" or "false" to enable embedded mode
 	chatType?: string; // New: "embedded" or "popup" (aligns with database schema)
@@ -33,6 +34,7 @@ export type URLParams = {
  * - primaryColor: Primary theme color (hex)
  * - secondaryColor: Secondary theme color (hex)
  * - title: Header title text
+ * - titleFont: Font family for header title (e.g., "Arial", "Roboto")
  * - transparency: Color transparency (0-1)
  * - embedded: Enable embedded mode ("true" or "false") - legacy parameter
  * - chatType: Widget display mode ("embedded" or "popup") - new parameter
@@ -61,6 +63,7 @@ export const useURLParams = (): URLParams => {
 			primaryColor: searchParams.get("primaryColor") || undefined,
 			secondaryColor: searchParams.get("secondaryColor") || undefined,
 			title: searchParams.get("title") || undefined,
+			titleFont: searchParams.get("titleFont") || undefined,
 			transparency: searchParams.get("transparency") || undefined,
 			embedded: searchParams.get("embedded") || undefined,
 			chatType: searchParams.get("chatType") || undefined,
