@@ -96,7 +96,7 @@ function App() {
 
 		socket.on("handoff_request", (data) => {
 			console.log("📣 [Socket.IO] handoff_request received:", data);
-			alert(`Handoff request from ${data.customer_name || "customer"}`);
+			// alert(`Handoff request from ${data.customer_name || "customer"}`);
 		});
 
 		return () => {
