@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import { useDispatchRcbEventInternal } from "./useDispatchRcbEventInternal";
 import { useBotStatesContext } from "../../context/BotStatesContext";
@@ -32,6 +32,45 @@ export const useChatWindowInternal = () => {
 
 	// handles rcb events
 	const { dispatchRcbEvent } = useDispatchRcbEventInternal();
+
+	// Notify parent window of initial chat window state
+	useEffect(() => {
+		const sendInitialState = () => {
+			try {
+				if (window.parent && window.parent !== window) {
+					const initialState = isChatWindowOpen ? "open" : "closed";
+					window.parent.postMessage(isChatWindowOpen ? "chatOpened" : "chatClosed", "*");
+					window.parent.postMessage(
+						{ type: "rchat_widget_state", value: initialState },
+						"*"
+					);
+					console.log("[Chat Window] Sent initial state to parent:", initialState);
+				}
+			} catch (e) {
+				console.warn("[Chat Window] Could not notify parent of initial state:", e);
+			}
+		};
+
+		// Send immediately
+		sendInitialState();
+
+		// Also send after a short delay to ensure parent is ready
+		const timer = setTimeout(sendInitialState, 100);
+
+		// Listen for parent requesting initial state
+		const handleParentRequest = (event: MessageEvent) => {
+			if (event.data?.type === "requestInitialWidgetState") {
+				sendInitialState();
+			}
+		};
+
+		window.addEventListener("message", handleParentRequest);
+
+		return () => {
+			clearTimeout(timer);
+			window.removeEventListener("message", handleParentRequest);
+		};
+	}, [isChatWindowOpen]); // Re-run if initial state changes
 
 	/**
 	 * Checks if chatbot is visible (uses chatbot body as reference).
@@ -78,11 +117,27 @@ export const useChatWindowInternal = () => {
 			}
 		}
 		setSyncedIsChatWindowOpen(prev => {
+			const newState = !prev;
+			
 			// if currently false means opening so set unread count to 0
 			if (!prev) {
 				setUnreadCount(0);
 			}
-			return !prev;
+			
+			// Notify parent window about state change
+			try {
+				if (window.parent && window.parent !== window) {
+					window.parent.postMessage(newState ? "chatOpened" : "chatClosed", "*");
+					window.parent.postMessage(
+						{ type: "rchat_widget_state", value: newState ? "open" : "closed" },
+						"*"
+					);
+				}
+			} catch (e) {
+				console.warn("[Chat Window] Could not notify parent window:", e);
+			}
+			
+			return newState;
 		});
 	}, [syncedIsChatWindowOpenRef]);
 
