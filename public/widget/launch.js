@@ -31,18 +31,18 @@
 
     // Max limits to prevent scrollbars (95vw max, leave ~20px bottom margin)
     const maxW = Math.min(450, Math.floor(vw * 0.95));
-    const maxH = Math.min(700, Math.floor(vh - 20));
+    const maxH = Math.min(600, Math.floor(vh - 20));
 
     if (isMobile()) {
       if (state === "closed") return { w: 110, h: 110 };
       // Open on mobile: take up most of screen without causing scroll
       return {
         w: Math.min(vw * 0.95, vw - 10),
-        h: Math.min(vh * 0.9, vh - 20)
+        h: Math.min(vh * 0.9, vh - 20),
       };
     } else {
       // Desktop
-      if (state === "closed") return { w: 110, h: 110 };
+      if (state === "closed") return { w: 100, h: 110 };
       return { w: maxW, h: maxH };
     }
   }
@@ -66,8 +66,14 @@
     contain: "layout paint size style",
     willChange: "width,height",
     transition: "width 0.2s ease, height 0.2s ease",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-    borderRadius: "12px"
+
+    // Removed the “transparent border” look by disabling shadow and rounding on the container itself.
+    // (Many times the “border” people see is the box-shadow + rounded corners against page background.)
+    boxShadow: "none",
+    borderRadius: "0",
+    border: "none",
+    outline: "none",
+    background: "transparent",
   });
 
   const widgetFrame = document.createElement("iframe");
@@ -82,9 +88,11 @@
     width: "100%",
     height: "100%",
     border: "none",
+    outline: "none",
     overflow: "hidden",
     pointerEvents: "auto",
-    display: "block"
+    display: "block",
+    background: "transparent",
   });
 
   widgetContainer.appendChild(widgetFrame);
@@ -123,10 +131,7 @@
   // ===== IFRAME COMMUNICATION =====
   widgetFrame.onload = () => {
     try {
-      widgetFrame.contentWindow.postMessage(
-        { type: "viewportWidth", width: getVW() },
-        "*"
-      );
+      widgetFrame.contentWindow.postMessage({ type: "viewportWidth", width: getVW() }, "*");
     } catch {}
   };
 
@@ -154,10 +159,7 @@
       let savedState = getSavedState();
       if (isMobile()) savedState = "closed";
       event.source &&
-        event.source.postMessage(
-          { type: "initialWidgetState", state: savedState },
-          "*"
-        );
+        event.source.postMessage({ type: "initialWidgetState", state: savedState }, "*");
       return;
     }
   });
