@@ -117,7 +117,7 @@ export const mapApiToConfig = (apiData: any) => {
 			embedded: embedded, // Set embedded mode from chatType
 		},
 		chatButton: {
-			// Can add button customization here if needed
+			icon: chatDesign?.chatButtonImage, // Map chatButtonImage from database to chat button icon
 		},
 		// Store dimensions from database (will be merged with URL overrides later)
 		chatWindowSize: Object.keys(dimensions).length > 0 ? dimensions : undefined,
