@@ -62,6 +62,11 @@ const getInitialOpenState = (chatDesign: any): boolean => {
  * Supports both new schema (chatType, embeddedDimensions, desktopBehavior, mobileBehavior)
  * and legacy schema (onPageLoadDisplay) for backward compatibility.
  * 
+ * Database field mappings:
+ * - chatDesign.chatButtonImage → chatButton.icon
+ * - chatDesign.desktopBehavior.callout → tooltip.mode (true="CLOSE", false="NEVER")
+ * - chatDesign.desktopBehavior.calloutText → tooltip.text
+ * 
  * @param apiData - The full widget configuration from the API
  * @returns Object with branding tokens and other settings
  */
@@ -92,6 +97,18 @@ export const mapApiToConfig = (apiData: any) => {
 		};
 	}
 	
+	// Map callout settings to tooltip configuration
+	// Check desktopBehavior for callout settings (can be enhanced for mobile detection)
+	const desktopBehavior = chatDesign?.desktopBehavior;
+	let tooltipConfig = {};
+	if (desktopBehavior?.callout !== undefined) {
+		// If callout is explicitly set in database, use it
+		tooltipConfig = {
+			mode: desktopBehavior.callout ? "CLOSE" : "NEVER",
+			text: desktopBehavior.calloutText || "Talk to me! 😊",
+		};
+	}
+	
 	return {
 		branding,
 		header: {
@@ -119,6 +136,8 @@ export const mapApiToConfig = (apiData: any) => {
 		chatButton: {
 			icon: chatDesign?.chatButtonImage, // Map chatButtonImage from database to chat button icon
 		},
+		// Map callout to tooltip (only if explicitly set in database)
+		...(Object.keys(tooltipConfig).length > 0 && { tooltip: tooltipConfig }),
 		// Store dimensions from database (will be merged with URL overrides later)
 		chatWindowSize: Object.keys(dimensions).length > 0 ? dimensions : undefined,
 	};
