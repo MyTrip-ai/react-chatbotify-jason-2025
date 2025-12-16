@@ -1,12 +1,109 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
 import ChatBot from "./components/ChatBot";
 import { Flow } from "./types/Flow";
 import { Params } from "./types/Params";
 import { defaultBrandTokens } from "./types/BrandTokens";
 import { myTripFloatingSettings, myTripFloatingStyles } from "./themes/myTripTheme";
+import { Settings } from "./types/Settings";
+import { getTenantRoom, EVENT_NAMES } from "./types/handoff";
+
+const TENANT_ID = "mytrip-ai";
+const SERVER_URL = "http://localhost:8001";
 
 function App() {
-	const [name, setName] = useState("")
+	const [name, setName] = useState("");
+	const [remoteSettings, setRemoteSettings] = useState<Settings | null>(null);
+
+	const baseSettings = useMemo(() => myTripFloatingSettings(defaultBrandTokens), []);
+
+	useEffect(() => {
+		const loadConfig = async () => {
+			try {
+				const res = await fetch(
+					`${SERVER_URL}/api/config/widget-display/public?tenant=${TENANT_ID}`
+				);
+				if (!res.ok) {
+					throw new Error(`Config fetch failed: ${res.status}`);
+				}
+				const json = await res.json();
+				const cfg = json.display_mode;
+				const mergedSettings: Settings = {
+					...baseSettings,
+					general: {
+						...baseSettings.general,
+						embedded: cfg?.embedded ?? baseSettings.general?.embedded,
+						flowStartTrigger: cfg?.flow_start_trigger ?? baseSettings.general?.flowStartTrigger,
+						showHeader: cfg?.show_header ?? baseSettings.general?.showHeader,
+						showFooter: cfg?.show_footer ?? baseSettings.general?.showFooter,
+					},
+					tooltip: {
+						...baseSettings.tooltip,
+						mode: cfg?.tooltip?.mode ?? baseSettings.tooltip?.mode,
+						text: cfg?.tooltip?.text ?? baseSettings.tooltip?.text,
+					},
+					notification: {
+						...baseSettings.notification,
+						defaultToggledOn:
+							cfg?.notification_badge?.enabled ?? baseSettings.notification?.defaultToggledOn,
+						showCount:
+							cfg?.notification_badge?.show_count ?? baseSettings.notification?.showCount,
+						volume: cfg?.notification_badge?.volume ?? baseSettings.notification?.volume,
+					},
+					chatWindow: {
+						...baseSettings.chatWindow,
+						defaultOpen: cfg?.initial_state
+							? cfg.initial_state === "open"
+							: baseSettings.chatWindow?.defaultOpen,
+					},
+					device: {
+						...baseSettings.device,
+						applyMobileOptimizations:
+							cfg?.mobile_optimizations ?? baseSettings.device?.applyMobileOptimizations,
+					},
+				};
+				setRemoteSettings(mergedSettings);
+			} catch (error) {
+				console.error("Failed to load remote config:", error);
+			}
+		};
+
+		loadConfig();
+	}, [baseSettings]);
+
+	useEffect(() => {
+		console.log("🔌 [Socket.IO] Connecting to", SERVER_URL);
+		const socket = io(SERVER_URL, { transports: ["websocket", "polling"] });
+
+		socket.on("connect", () => {
+			console.log("✅ [Socket.IO] Connected, socket id:", socket.id);
+			const tenantRoom = getTenantRoom(TENANT_ID);
+			console.log("🚪 [Socket.IO] Joining room:", tenantRoom);
+			// CONTRACT ENFORCEMENT: Use getTenantRoom() and include client_type
+			socket.emit(EVENT_NAMES.JOIN_ROOM, { 
+				room: tenantRoom,
+				client_type: 'widget'  // REQUIRED: Identifies client for debugging
+			});
+		});
+
+		socket.on("connect_error", (error) => {
+			console.error("❌ [Socket.IO] Connection error:", error.message);
+		});
+
+		socket.on("disconnect", (reason) => {
+			console.log("🔌 [Socket.IO] Disconnected:", reason);
+		});
+
+		socket.on("handoff_request", (data) => {
+			console.log("📣 [Socket.IO] handoff_request received:", data);
+			// alert(`Handoff request from ${data.customer_name || "customer"}`);
+		});
+
+		return () => {
+			console.log("🧹 [Socket.IO] Cleaning up connection");
+			socket.disconnect();
+		};
+	}, []);
 
 	// Serves as an example flow used during the development phase - covers all possible attributes in a block.
 	// restore to default state before running selenium tests (or update the test cases if necessary)!
@@ -143,20 +240,16 @@ function App() {
 		<div className="App">
 			<header className="App-header">
 				<div style={{display: "flex", justifyContent: "center", alignItems: "center", marginTop: `calc(20vh)`}}>
-					<ChatBot
-						id="chatbot-id"
-						flow={flow}
-						settings={{
-							...myTripFloatingSettings(defaultBrandTokens),
-							audio: {disabled: false},
-							chatInput: {botDelay: 1000},
-							userBubble: {showAvatar: true},
-							botBubble: {showAvatar: true},
-							voice: {disabled: false},
-							sensitiveInput: {asterisksCount: 6},
-						}}
-						styles={myTripFloatingStyles(defaultBrandTokens)}
-					></ChatBot>
+					{remoteSettings ? (
+						<ChatBot
+							id="chatbot-id"
+							flow={flow}
+							settings={remoteSettings}
+							styles={myTripFloatingStyles(defaultBrandTokens)}
+						/>
+					) : (
+						<div>Loading...</div>
+					)}
 				</div>
 			</header>
 		</div>

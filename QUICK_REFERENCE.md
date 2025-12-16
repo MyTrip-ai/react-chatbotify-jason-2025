@@ -1,5 +1,9 @@
 # Quick Reference - URL Parameters
 
+> Operator handoff contracts, integration, and troubleshooting docs are now canonicalized in the chat server repo:  
+> `/home/jason/Documents/Python-Projects-Assistant-Server--cleanup-branch/docs/README.md`  
+> Widget pointer: `docs/plan/API_CONTRACTS_README.md`
+
 ## All Supported URL Parameters
 
 ### Mode

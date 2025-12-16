@@ -25,6 +25,11 @@ import { useParentMessaging } from "./hooks/useParentMessaging"; // Parent windo
 
 // Chat service functions
 import { getChatHistory, callAmaliaAPI } from "./services/chatService";
+import { handoffService } from "./services/HandoffService";
+import { useHandoff } from "./hooks/useHandoff";
+
+// Configuration constants
+import { TENANT_ID } from "./config/constants"; // Tenant ID for display mode API
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
@@ -162,6 +167,52 @@ const fetchWidgetConfigByToken = async (token: string) => {
 	}
 };
 
+/**
+ * Fetches widget display mode configuration from the backend.
+ * This determines how the chat widget appears on page load (open/closed/embedded).
+ *
+ * @param tenantId - The tenant ID from constants
+ * @returns Display mode configuration object, or null if fetch fails
+ *
+ * API Response Structure:
+ * {
+ *   display_mode: {
+ *     preset: "minimalist_icon",
+ *     initial_state: "closed",
+ *     notification_badge: { enabled: false, ... },
+ *     tooltip: { mode: "NEVER", text: "" },
+ *     embedded: false,
+ *     ...
+ *   }
+ * }
+ */
+const fetchDisplayMode = async (tenantId: string) => {
+	console.log("🎨 fetchDisplayMode called for tenant:", tenantId);
+
+	try {
+		const url = `${API_ENDPOINTS.EXPRESS_MIDDLEWARE}/api/config/widget-display/public?tenant=${tenantId}`;
+		console.log("📤 Fetching display mode from:", url);
+
+		const response = await fetch(url);
+
+		console.log("📥 Display mode API response status:", response.status, response.statusText);
+
+		if (!response.ok) {
+			console.warn("⚠️ Failed to fetch display mode, using defaults");
+			return null;
+		}
+
+		const data = await response.json();
+		console.log("✅ Display mode received:", data.display_mode?.preset);
+		console.log("📊 Full display mode config:", data.display_mode);
+
+		return data.display_mode;
+	} catch (error) {
+		console.error("❌ Error fetching display mode:", error);
+		return null;
+	}
+};
+
 // ============================================================================
 // MAIN APPLICATION COMPONENT
 // ============================================================================
@@ -199,6 +250,9 @@ function AppWithDatabaseConfig() {
 	
 	// Ref to track if initial messages have been injected
 	const hasInjectedInitialMessages = useRef(false);
+	
+	// Ref to hold current params for operator message injection
+	const [currentParams, setCurrentParams] = useState<Params | null>(null);
 
 	// Extract URL parameters for configuration overrides
 	const urlParams = useURLParams();
@@ -218,6 +272,32 @@ function AppWithDatabaseConfig() {
 	console.log("🚀 AppWithDatabaseConfig component mounted");
 	console.log("📊 Initial state - configLoaded:", configLoaded);
 	console.log("🔗 URL Parameters:", urlParams);
+
+	// ========================================================================
+	// HANDOFF SERVICE INITIALIZATION
+	// ========================================================================
+	
+	// Use handoff hook for receiving operator messages
+	const { isConnected: handoffConnected, isInHumanMode, operatorName } = useHandoff({
+		params: currentParams
+	});
+
+	console.log("[Handoff] Connected:", handoffConnected, "Human mode:", isInHumanMode, "Operator:", operatorName);
+	
+	useEffect(() => {
+		// Initialize handoff service to listen for tenant-level events
+		handoffService.init();
+
+		// Register callback for handoff requests (for testing)
+		const unsubscribe = handoffService.onHandoffRequest((request) => {
+			console.log("📣 [AppWithDatabaseConfig] Handoff request received:", request);
+			// alert(`Handoff request from ${request.customer_name || "customer"}: ${request.reason}`);
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
 
 	// ========================================================================
 	// CONFIGURATION LOADING
@@ -311,7 +391,63 @@ function AppWithDatabaseConfig() {
 			console.log("✨ Config AFTER - header:", config?.header);
 			console.log("✨ Config AFTER - header.fontFamily:", config?.header?.fontFamily);
 			console.log("✨ Final config source:", configSource || "URL params only");
-			
+
+			// ================================================================
+			// STEP 4.5: Fetch and Apply Widget Display Mode
+			// Fetches display mode (minimalist_icon, immediate_engagement, etc.)
+			// from backend and applies it to the configuration
+			// ================================================================
+			console.log("🎨 Fetching widget display mode for tenant:", TENANT_ID);
+			const displayMode = await fetchDisplayMode(TENANT_ID);
+
+			if (displayMode) {
+				console.log("🎨 Applying display mode:", displayMode.preset);
+
+				// Apply display mode settings to config
+				// These override the default settings based on the selected mode
+				config.general = config.general || {};
+				config.chatWindow = config.chatWindow || {};
+				config.notification = config.notification || {};
+				config.tooltip = config.tooltip || {};
+
+				// Apply embedded setting
+				if (displayMode.embedded !== undefined) {
+					config.general.embedded = displayMode.embedded;
+					console.log("   📍 Set embedded:", displayMode.embedded);
+				}
+
+				// Apply initial state (open vs closed)
+				if (displayMode.initial_state) {
+					config.chatWindow.defaultOpen = displayMode.initial_state === 'open';
+					console.log("   🪟 Set defaultOpen:", config.chatWindow.defaultOpen);
+				}
+
+				// Apply notification badge settings
+				if (displayMode.notification_badge) {
+					config.notification.disabled = !displayMode.notification_badge.enabled;
+					config.notification.showCount = displayMode.notification_badge.show_count || false;
+					config.notification.volume = displayMode.notification_badge.volume || 0;
+					console.log("   🔔 Set notification:", {
+						disabled: config.notification.disabled,
+						showCount: config.notification.showCount
+					});
+				}
+
+				// Apply tooltip settings
+				if (displayMode.tooltip) {
+					config.tooltip.mode = displayMode.tooltip.mode || 'NEVER';
+					config.tooltip.text = displayMode.tooltip.text || '';
+					console.log("   💬 Set tooltip:", {
+						mode: config.tooltip.mode,
+						text: config.tooltip.text
+					});
+				}
+
+				console.log("✅ Display mode applied successfully");
+			} else {
+				console.log("⚠️ No display mode found, using default settings");
+			}
+
 			// ================================================================
 			// STEP 4: Update State
 			// ================================================================
@@ -375,6 +511,9 @@ function AppWithDatabaseConfig() {
 			message: async (params: Params) => {
 				console.log('🎬 [Flow] Entering start block - fetching chat history...');
 				
+				// Update params ref for operator message injection
+				setCurrentParams(params);
+				
 				// Check if HTML parsing is enabled
 				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;
 				
@@ -403,6 +542,9 @@ function AppWithDatabaseConfig() {
 		loop: {
 			message: async (params: Params) => {
 				console.log('🔄 [Flow] In loop block - processing user message...');
+				
+				// Update params ref for operator message injection
+				setCurrentParams(params);
 				
 				// Check if HTML parsing is enabled
 				const enableHTMLParsing = dbConfig?.botBubble?.dangerouslySetInnerHtml ?? false;

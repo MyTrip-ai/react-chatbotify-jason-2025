@@ -4,18 +4,40 @@
  */
 
 /**
- * API Endpoints
- * Base URLs for different API services
+ * Environment Detection
+ * Set VITE_DEV_MODE=true in .env for local development
+ */
+const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === "true" || 
+	import.meta.env.DEV || 
+	window.location.hostname === "localhost";
+
+console.log(`🔧 [Config] Running in ${IS_DEV_MODE ? "DEVELOPMENT" : "PRODUCTION"} mode`);
+
+/**
+ * Tenant Configuration
+ */
+export const TENANT_ID = IS_DEV_MODE 
+	? "tenant-undiscovered-2"  // Dev tenant
+	: "mytrip-ai";             // Production tenant
+
+/**
+ * API Endpoints - Dev vs Production
  */
 export const API_ENDPOINTS = {
-	// Main chat API base URL
-	CHAT_BASE: "https://chats.mytrip.ai",
-	// CHAT_BASE: "http://localhost:8001",
-	// Express middleware endpoint (if needed)
+	// All APIs point to localhost in dev
+	CHAT_BASE: IS_DEV_MODE 
+		? "http://localhost:8001" 
+		: "https://chats.mytrip.ai",
+	
+	HANDOFF_SERVER: IS_DEV_MODE 
+		? "http://localhost:8001" 
+		: "https://chats.mytrip.ai",
+	
 	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001",
-	// Token service endpoint (if needed)
-	// TOKEN_SERVICE: "http://localhost:3000"
-	TOKEN_SERVICE: "https://stagingplatform.mytrip.ai"
+	
+	TOKEN_SERVICE: IS_DEV_MODE
+		? "http://localhost:3000"
+		: "https://stagingplatform.mytrip.ai"
 };
 
 /**
