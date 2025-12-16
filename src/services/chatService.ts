@@ -5,7 +5,7 @@
  * Phase D: Also handles [HUMAN_MODE] responses for operator handoff
  */
 
-import { API_ENDPOINTS, SPECIAL_PATHS, DEFAULT_PATH, GREETING_MESSAGE, TENANT_ID } from "../config/constants";
+import { API_ENDPOINTS, SPECIAL_PATHS, DEFAULT_PATH, GREETING_MESSAGE, ASSISTANT_ID } from "../config/constants";
 import { Params } from "../types/Params";
 import { parseHTMLToReact, containsHTML } from "../utils/htmlParser";
 import { handoffService } from "./HandoffService";
@@ -38,12 +38,12 @@ const getEffectivePath = (currentPath: string): string => {
 };
 
 /**
- * Constructs the chat API URL using tenant_id as the route
- * Endpoint format: POST /{tenant_id}/chat
+ * Constructs the chat API URL using assistant_id as the route
+ * Endpoint format: POST /{assistant_id}/chat
  * @returns Complete API URL
  */
 const getChatApiUrl = (): string => {
-	return `${API_ENDPOINTS.CHAT_BASE}/${TENANT_ID}/chat`;
+	return `${API_ENDPOINTS.CHAT_BASE}/${ASSISTANT_ID}/chat`;
 };
 
 /**
@@ -77,7 +77,7 @@ export const callAmaliaAPI = async (
 	const requestBody: Record<string, unknown> = {
 		message: params.userInput,
 		client_id: clientIdWithPath,
-		tenant_id: TENANT_ID,
+		tenant_id: ASSISTANT_ID,
 	};
 
 	if (params.onboardingThreadID) {
@@ -251,7 +251,7 @@ export const callAmaliaAPI = async (
 
 		console.error('❌ [callAmaliaAPI] API Configuration:');
 		console.error('   - URL:', url);
-		console.error('   - Tenant ID:', TENANT_ID);
+		console.error('   - Assistant ID:', ASSISTANT_ID);
 		console.error('   - Client ID:', clientIdWithPath);
 		console.error('   - Is Dev Mode:', IS_DEV_MODE);
 

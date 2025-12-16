@@ -8,7 +8,7 @@
  */
 
 import { io, Socket } from "socket.io-client";
-import { API_ENDPOINTS, TENANT_ID } from "../config/constants";
+import { API_ENDPOINTS, ASSISTANT_ID } from "../config/constants";
 
 // ============================================================================
 // CONTRACT ENFORCEMENT - Local implementations matching @mytrip/handoff-contracts
@@ -88,7 +88,7 @@ type HandoffRequestCallback = (request: HandoffRequest) => void;
 class HandoffService {
 	private socket: Socket | null = null;
 	private threadId: string | null = null;
-	private tenantId: string = TENANT_ID;
+	private assistantId: string = ASSISTANT_ID;
 	private serverUrl: string;
 	private joinedThreadRoom: string | null = null;
 	private tenantRoomJoined: boolean = false;
@@ -110,10 +110,10 @@ class HandoffService {
 	}
 
 	/**
-	 * Set the tenant ID for room subscriptions
+	 * Set the assistant ID for room subscriptions
 	 */
-	setTenantId(tenantId: string): void {
-		this.tenantId = tenantId;
+	setAssistantId(assistantId: string): void {
+		this.assistantId = assistantId;
 	}
 
 	// ==========================================================================
@@ -303,7 +303,7 @@ class HandoffService {
 		// Connection events
 		this.socket.on("connect", () => {
 			console.log("[HandoffService] ✅ Connected to handoff server, socket.id:", this.socket?.id);
-			console.log("[HandoffService] 🏠 Tenant ID for room join:", this.tenantId);
+			console.log("[HandoffService] 🏠 Assistant ID for room join:", this.assistantId);
 			this.joinThreadRoom();
 			this.notifyConnectionCallbacks(true);
 		});
@@ -436,7 +436,7 @@ class HandoffService {
 		// Join tenant room for handoff_request events
 		// CONTRACT ENFORCEMENT: Use getTenantRoom() and include client_type
 		if (!this.tenantRoomJoined) {
-			const tenantRoom = getTenantRoom(this.tenantId);
+			const tenantRoom = getTenantRoom(this.assistantId);
 			console.log("[HandoffService] 🚪 JOINING TENANT ROOM:", tenantRoom);
 			this.socket.emit(EVENT_NAMES.JOIN_ROOM, { 
 				room: tenantRoom,
@@ -445,7 +445,7 @@ class HandoffService {
 			this.tenantRoomJoined = true;
 			console.log("[HandoffService] ✅ Tenant room join emitted:", tenantRoom);
 		} else {
-			console.log("[HandoffService] ℹ️ Tenant room already joined:", getTenantRoom(this.tenantId));
+			console.log("[HandoffService] ℹ️ Tenant room already joined:", getTenantRoom(this.assistantId));
 		}
 
 		// Join thread room for operator messages
