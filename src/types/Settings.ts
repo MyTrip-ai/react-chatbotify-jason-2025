@@ -30,6 +30,7 @@ export type Settings = {
 		avatar?: string;
 		buttons?: Array<JSX.Element | string>;
 		closeChatIcon?: string | React.FC<React.SVGProps<SVGSVGElement>>;
+		fontFamily?: string;
 	},
 	notification?: {
 		disabled?: boolean;

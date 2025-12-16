@@ -8,36 +8,56 @@
  * Set VITE_DEV_MODE=true in .env for local development
  */
 const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === "true" || 
-	import.meta.env.DEV || 
-	window.location.hostname === "localhost";
+	import.meta.env.DEV;
 
 console.log(`🔧 [Config] Running in ${IS_DEV_MODE ? "DEVELOPMENT" : "PRODUCTION"} mode`);
 
 /**
- * Tenant Configuration
+ * Assistant ID Configuration
+ * In dev mode: uses hardcoded dev assistant ID
+ * In production: extracts from URL path (e.g., /my-assistant -> "my-assistant")
  */
-export const TENANT_ID = IS_DEV_MODE 
-	? "tenant-undiscovered-2"  // Dev tenant
-	: "mytrip-ai";             // Production tenant
+const DEV_ASSISTANT_ID = "tenant-undiscovered-2";
 
 /**
- * API Endpoints - Dev vs Production
+ * Gets the assistant ID from the current URL path
+ * Removes leading slash and returns the first path segment
+ * @returns Assistant ID from URL or empty string
+ */
+const getAssistantIdFromUrl = (): string => {
+	const path = window.location.pathname;
+	// Remove leading slash and get first segment
+	const segments = path.split('/').filter(Boolean);
+	return segments.length > 0 ? segments[0] : '';
+};
+
+/**
+ * Active Assistant ID
+ * Dev: hardcoded dev assistant ID
+ * Prod: extracted from URL path
+ */
+export const ASSISTANT_ID = IS_DEV_MODE 
+	? DEV_ASSISTANT_ID
+	: getAssistantIdFromUrl();
+
+/**
+ * API Endpoints - Configured via environment variables
+ * Dev mode uses localhost defaults, production uses .env.production values
  */
 export const API_ENDPOINTS = {
-	// All APIs point to localhost in dev
-	CHAT_BASE: IS_DEV_MODE 
-		? "http://localhost:8001" 
-		: "https://chats.mytrip.ai",
+	// Chat and Handoff servers - use VITE_CHAT_BASE_URL from .env
+	CHAT_BASE: import.meta.env.VITE_CHAT_BASE_URL || 
+		(IS_DEV_MODE ? "http://localhost:8001" : "https://chats.mytrip.ai"),
 	
-	HANDOFF_SERVER: IS_DEV_MODE 
-		? "http://localhost:8001" 
-		: "https://chats.mytrip.ai",
+	HANDOFF_SERVER: import.meta.env.VITE_CHAT_BASE_URL || 
+		(IS_DEV_MODE ? "http://localhost:8001" : "https://chats.mytrip.ai"),
 	
+	// Express middleware - use VITE_API_URL from .env
 	EXPRESS_MIDDLEWARE: import.meta.env.VITE_API_URL || "http://localhost:3001",
 	
-	TOKEN_SERVICE: IS_DEV_MODE
-		? "http://localhost:3000"
-		: "https://stagingplatform.mytrip.ai"
+	// Token service - use VITE_TOKEN_SERVICE_URL from .env
+	TOKEN_SERVICE: import.meta.env.VITE_TOKEN_SERVICE_URL || 
+		(IS_DEV_MODE ? "http://localhost:3000" : "https://stagingplatform.mytrip.ai")
 };
 
 /**

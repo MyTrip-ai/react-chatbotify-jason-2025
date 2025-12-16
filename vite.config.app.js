@@ -32,5 +32,11 @@ export default ({mode}) => {
       port: 3000,
       host: true,
     },
+    preview: {
+      port: 4173,
+      host: true,
+      // Enable SPA fallback - serve index.html for all routes
+      open: false,
+    },
   });
 }

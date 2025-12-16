@@ -29,7 +29,7 @@ import { handoffService } from "./services/HandoffService";
 import { useHandoff } from "./hooks/useHandoff";
 
 // Configuration constants
-import { TENANT_ID } from "./config/constants"; // Tenant ID for display mode API
+import { ASSISTANT_ID } from "./config/constants"; // Assistant ID for display mode API
 
 // Theme configuration (settings = behavior, styles = appearance)
 import { myTripFloatingSettings, myTripFloatingStyles, myTripEmbeddedStyles } from "./themes/myTripTheme";
@@ -397,8 +397,8 @@ function AppWithDatabaseConfig() {
 			// Fetches display mode (minimalist_icon, immediate_engagement, etc.)
 			// from backend and applies it to the configuration
 			// ================================================================
-			console.log("🎨 Fetching widget display mode for tenant:", TENANT_ID);
-			const displayMode = await fetchDisplayMode(TENANT_ID);
+			console.log("🎨 Fetching widget display mode for assistant:", ASSISTANT_ID);
+			const displayMode = await fetchDisplayMode(ASSISTANT_ID);
 
 			if (displayMode) {
 				console.log("🎨 Applying display mode:", displayMode.preset);
