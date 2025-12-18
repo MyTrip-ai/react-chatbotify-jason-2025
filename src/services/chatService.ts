@@ -137,6 +137,12 @@ export const callAmaliaAPI = async (
 			// Store thread ID and connect to handoff service for operator messages
 			persistedThreadId = data.thread_id;
 
+			// Set tenant ID from API response for socket room subscription
+			if (data.tenant_id) {
+				console.log("🏢 [callAmaliaAPI] Tenant ID received:", data.tenant_id);
+				handoffService.setTenantId(data.tenant_id);
+			}
+
 			if (!handoffService.isConnected() || handoffService.getThreadId() !== data.thread_id) {
 				handoffService.connect(data.thread_id);
 			}

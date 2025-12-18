@@ -20,10 +20,6 @@ const EVENT_NAMES = {
 
 function getTenantRoom(tenantSlug: string): string {
 	if (!tenantSlug) throw new Error("Tenant slug cannot be empty");
-	// Reject MongoDB ObjectId format (24 hex chars)
-	if (tenantSlug.length === 24 && /^[0-9a-f]{24}$/i.test(tenantSlug)) {
-		throw new Error(`Invalid tenant slug: "${tenantSlug}" looks like MongoDB ObjectId`);
-	}
 	return `tenant:${tenantSlug}`;
 }
 
@@ -88,6 +84,7 @@ type HandoffRequestCallback = (request: HandoffRequest) => void;
 class HandoffService {
 	private socket: Socket | null = null;
 	private threadId: string | null = null;
+	private tenantId: string | null = null;
 	private assistantId: string = ASSISTANT_ID;
 	private serverUrl: string;
 	private joinedThreadRoom: string | null = null;
@@ -114,6 +111,22 @@ class HandoffService {
 	 */
 	setAssistantId(assistantId: string): void {
 		this.assistantId = assistantId;
+	}
+
+	/**
+	 * Set the tenant ID from API response for room subscriptions
+	 */
+	setTenantId(tenantId: string): void {
+		if (this.tenantId === tenantId) return;
+		
+		console.log("[HandoffService] Setting tenant ID:", tenantId);
+		this.tenantId = tenantId;
+		this.tenantRoomJoined = false;
+		
+		// Re-join tenant room if socket is connected
+		if (this.socket?.connected) {
+			this.joinTenantRoom();
+		}
 	}
 
 	// ==========================================================================
@@ -427,16 +440,17 @@ class HandoffService {
 		});
 	}
 
-	private joinThreadRoom(): void {
+	private joinTenantRoom(): void {
 		if (!this.socket?.connected) {
-			console.log("[HandoffService] ⚠️ joinThreadRoom called but socket not connected");
+			console.log("[HandoffService] ⚠️ joinTenantRoom called but socket not connected");
 			return;
 		}
 
 		// Join tenant room for handoff_request events
-		// CONTRACT ENFORCEMENT: Use getTenantRoom() and include client_type
-		if (!this.tenantRoomJoined) {
-			const tenantRoom = getTenantRoom(this.assistantId);
+		// Use tenantId from API if available, otherwise fall back to assistantId
+		const tenantIdentifier = this.tenantId || this.assistantId;
+		if (!this.tenantRoomJoined && tenantIdentifier) {
+			const tenantRoom = getTenantRoom(tenantIdentifier);
 			console.log("[HandoffService] 🚪 JOINING TENANT ROOM:", tenantRoom);
 			this.socket.emit(EVENT_NAMES.JOIN_ROOM, { 
 				room: tenantRoom,
@@ -444,9 +458,19 @@ class HandoffService {
 			});
 			this.tenantRoomJoined = true;
 			console.log("[HandoffService] ✅ Tenant room join emitted:", tenantRoom);
-		} else {
-			console.log("[HandoffService] ℹ️ Tenant room already joined:", getTenantRoom(this.assistantId));
+		} else if (this.tenantRoomJoined) {
+			console.log("[HandoffService] ℹ️ Tenant room already joined:", getTenantRoom(tenantIdentifier));
 		}
+	}
+
+	private joinThreadRoom(): void {
+		if (!this.socket?.connected) {
+			console.log("[HandoffService] ⚠️ joinThreadRoom called but socket not connected");
+			return;
+		}
+
+		// Join tenant room first
+		this.joinTenantRoom();
 
 		// Join thread room for operator messages
 		// CONTRACT ENFORCEMENT: Use getThreadRoom() and include client_type
