@@ -17,7 +17,7 @@ console.log(`🔧 [Config] Running in ${IS_DEV_MODE ? "DEVELOPMENT" : "PRODUCTIO
  * In dev mode: uses hardcoded dev assistant ID
  * In production: extracts from URL path (e.g., /my-assistant -> "my-assistant")
  */
-const DEV_ASSISTANT_ID = "tenant-undiscovered-2";
+const DEV_ASSISTANT_ID = "692dcd694130f3f77a280bb3";
 
 /**
  * Gets the assistant ID from the current URL path

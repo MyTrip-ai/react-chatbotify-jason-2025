@@ -9,7 +9,7 @@
 // TENANT CONFIGURATION
 // ============================================================================
 
-export const DEFAULT_TENANT_ID = "tenant-undiscovered-2";
+export const DEFAULT_TENANT_ID = "692dcd694130f3f77a280bb3";
 
 // ============================================================================
 // ROOM NAME BUILDERS

@@ -93,8 +93,8 @@ export const callAmaliaAPI = async (
 	try {
 		// Make API request with timeout
 		const controller = new AbortController();
-		// 30s timeout (increased due to slow OpenAI responses)
-		const timeoutId = setTimeout(() => controller.abort(), 30000);
+		// 120s timeout (increased due to slow OpenAI responses + CRM operations)
+		const timeoutId = setTimeout(() => controller.abort(), 120000);
 
 		console.log('⏱️ [callAmaliaAPI] Sending request at:', new Date().toISOString());
 		const fetchStartTime = performance.now();
